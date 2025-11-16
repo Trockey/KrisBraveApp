@@ -537,4 +537,5 @@ Przygotuj PRD z następującą strukturą:
 
 Pamiętaj, aby wypełnić każdą sekcję szczegółowymi, istotnymi informacjami w oparciu o opis projektu i nasze pytania wyjaśniające. Upewnij się, że PRD jest wyczerpujący, jasny i zawiera wszystkie istotne informacje potrzebne do dalszej pracy nad produktem.
 
-Ostateczny wynik powinien składać się wyłącznie z PRD zgodnego ze wskazanym formatem w markdown, który zapiszesz w pliku .ai/prd.md
+Ostateczny wynik powinien składać się wyłącznie z 
+PRD zgodnego ze wskazanym formatem w markdown, który zapiszesz w pliku .ai/prd.md
