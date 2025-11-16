@@ -79,7 +79,7 @@ DeveloperGoals oferuje spersonalizowany system rekomendacji oparty na AI, który
 #### 3.1.1 Dane profilu
 Profil użytkownika zawiera następujące dane:
 - Główne technologie (Java, .NET, JavaScript, Python, itd.)
-- Rola: Programista / Tester / Analityk
+- Rola: Programista / Tester / Analityk / Data Science Specialist itp.
 - Obszar rozwoju: User Interface / Backend / Full Stack / Testing
 
 #### 3.1.2 Zarządzanie profilem
@@ -98,8 +98,8 @@ Profil użytkownika zawiera następujące dane:
 #### 3.2.1 Model danych technologii
 Każda technologia zawiera:
 - Nazwa z prefiksem linii rozwoju (np. "DotNet - Entity Framework")
-- Prefix/Kategoria główna (koreluje z kategorią technologii): DotNet, Java, JavaScript, Python, Database, DevOps, Cloud, Virtualization, Data Science, Tools
-- Tag technologii: Technologia / Framework / Baza danych
+- kategoria główna (opisywana prefixem w nazwie): DotNet, Java, JavaScript, Python, Database, DevOps, Cloud, Virtualization, Data Science, Tools
+- Tag technologii: Technologia / Framework / Baza danych / Metodologia
 - Opis systemowy (krótki, generowany przez AI)
 - Opis prywatny (edytowalny przez użytkownika, widoczny tylko dla niego)
 - Status: Active / Ignored
@@ -113,7 +113,7 @@ Każda technologia zawiera:
 #### 3.2.3 Prezentacja technologii
 - Technologie prezentowane są w formie grafu z zależnościami
 - Brak domyślnego sortowania grafu
-- Każda technologia na grafie jest klikalna
+- Każda technologia na grafie jest klikalna - posiada dwa przycisku, każdy uruchamia inne wyskakujące okno
 
 ### 3.3 Mechanizm Rekomendacji AI
 
@@ -137,7 +137,7 @@ AI zwraca:
 - Format: JSON
 
 #### 3.3.4 Źródła danych AI
-AI bazuje na:
+AI bazuje na jednym źródle danych lub więcej, spośród
 - Trendach rynkowych
 - GitHub Trends
 - Ogłoszeniach o pracę
@@ -152,7 +152,7 @@ AI bazuje na:
 - Brak bezpośredniej interakcji użytkownika z AI (brak chatu)
 
 #### 3.3.6 Specjalizacja użytkownika
-- System respektuje specjalizację użytkownika
+- System respektuje specjalizację użytkownika zapisaną w Profilu
 - Przykład: developer .NET nie dostaje propozycji technologii Java
 - AI bierze pod uwagę cały profil przy generowaniu rekomendacji
 
@@ -164,7 +164,7 @@ AI bazuje na:
 
 #### 3.4.2 Struktura grafu
 - Graf pokazuje zależności między technologiami, które użytkownik już wybrał
-- Każdy graf zaczyna się od węzła "Start" (domyślny, pierwszy węzeł)
+- Graf użytkownika jest jeden i zaczyna się od węzła "Start" (domyślny, pierwszy węzeł)
 - Graf jest budowany stopniowo przez użytkownika poprzez dodawanie technologii
 - Aplikacja przechowuje zależności między dodanymi technologiami w kolejności dodawania
 - Każdy użytkownik ma swoją własną listę zależności technologii
@@ -207,7 +207,7 @@ Kliknięcie węzła technologii na grafie:
 #### 3.5.4 Akcje użytkownika
 Użytkownik może:
 - Dodać technologię do grafu (z listy rekomendacji AI)
-- Dodać technologię do listy "Ignore"
+- Dodać technologię do listy "Ignore" - robi to na popupie wyszukiwania technologii
 - Zmienić aktualny postęp nauki (suwak 0-100%)
 - Usunąć technologię z grafu
 - Modyfikować technologię (prywatny opis, progress)
@@ -382,7 +382,7 @@ Kryteria akceptacji:
 Tytuł: Użytkownik generuje pierwsze rekomendacje technologii
 
 Opis:  
-JAKO użytkownik z pustym grafem  
+JAKO użytkownik z grafem który zawiera tylko jeden node "Start"
 CHCĘ wygenerować pierwsze rekomendacje technologii  
 ABY rozpocząć planowanie swojej ścieżki rozwoju
 
@@ -407,14 +407,14 @@ Kryteria akceptacji:
 Tytuł: Użytkownik dodaje wybraną technologię do grafu
 
 Opis:  
-JAKO użytkownik przeglądający rekomendacje AI  
+JAKO użytkownik przeglądający rekomendacje AI na Popupie 2
 CHCĘ dodać wybraną technologię do mojego grafu  
 ABY rozpocząć jej naukę i śledzić postęp
 
 Kryteria akceptacji:
-- W Popup 2 każda rekomendowana technologia ma przycisk "Dodaj do grafu" lub podobny
+- W Popup 2 każda rekomendowana technologia posiada checkbox a na dole aplikacji jest przycisk "Dodaj do grafu". Dodawane są do grafu zaznaczone technologie przez checkbox
 - Po kliknięciu przycisku:
-  - Technologia dodaje się do grafu jako nowy węzeł
+  - Technologia (jedna lub więcej) dodaje się do grafu jako nowy węzeł
   - Tworzona jest krawędź (połączenie) między węzłem źródłowym a nową technologią
   - System zapisuje zależność w bazie danych
   - Technologia znika z listy rekomendacji w Popup 2
@@ -432,11 +432,12 @@ CHCĘ zignorować technologie, które mnie nie interesują
 ABY skupić się tylko na istotnych dla mnie technologiach
 
 Kryteria akceptacji:
-- W Popup 2 każda rekomendowana technologia ma przycisk "Ignoruj" lub podobny
-- Po kliknięciu przycisku:
-  - Technologia przenosi się do sekcji "Ignorowane" w tym samym popupie
+- W Popup 2  rekomendowana technologia posiada checkbox
+- Na dole popup 2 znaduje się przycisk "Ignoruj"
+- Po kliknięciu przycisku "Ignoruj":
+  - Technologia przenosi się na listę "Ignorowane" w tym samym popupie
   - Technologia jest zapisywana w bazie danych ze statusem "Ignored"
-  - Technologia znika z głównej listy rekomendacji
+  - Technologia znika z głównej listy rekomendacji a pojawia się na liście "Ignoruj"
 - Sekcja "Ignorowane" jest widoczna poniżej głównej listy rekomendacji
 - Użytkownik może przeglądać ignorowane technologie
 - Ignorowana technologia NIE pojawia się w przyszłych rekomendacjach (dla tego samego kontekstu)
@@ -450,9 +451,10 @@ CHCĘ móc przywrócić tę technologię
 ABY dodać ją do mojego grafu jeśli zmienię zdanie
 
 Kryteria akceptacji:
-- W sekcji "Ignorowane" (Popup 2) każda technologia ma przycisk "Przywróć"
+- W sekcji "Ignorowane" (Popup 2) każda technologia posiada checkbox
+- Na dole popup 2, pod listą "Ignorowane" znajduje się przycisk "Aktywuj"
 - Po kliknięciu przycisku:
-  - Technologia przenosi się z powrotem do głównej listy rekomendacji
+  - Technologie zaznaczone checkboxem przenoszą się z powrotem do głównej listy rekomendacji
   - Status w bazie danych zmienia się z "Ignored" na "Active"
   - Technologia jest dostępna do dodania do grafu
 - Użytkownik może teraz dodać technologię do grafu standardową akcją
@@ -484,6 +486,7 @@ Kryteria akceptacji:
 - Użytkownik klika dowolny węzeł technologii na grafie (nie tylko "Start")
 - Wyświetlane są dwa przyciski: "Opcje" i "Szukaj nowych technologii"
 - Po kliknięciu "Szukaj nowych technologii":
+  - System wyświetla popup 2
   - System wyświetla spinner/loader
   - System wysyła do AI:
     - Pełny profil użytkownika
@@ -555,6 +558,7 @@ Kryteria akceptacji:
     - Zależności (krawędzie) związane z tą technologią są usuwane
     - Jeśli istnieją technologie "potomne", one również mogą zostać usunięte lub odłączone (do ustalenia)
     - Technologia jest usuwana z bazy danych (lub oznaczana jako nieaktywna)
+    - Okno popup 1 zamyka się
 - Graf jest automatycznie aktualizowany
 - Węzeł "Start" NIE może być usunięty
 
@@ -579,7 +583,7 @@ Kryteria akceptacji:
   - Aktualny postęp (%)
 - Wszystkie informacje są czytelnie zaprezentowane
 
-### US-015: Nawigacja po grafie technologii
+### US-015: Nawigacja po grafie technologii (niektóre z wymieniinych tutaj opcji są opcjonalne)
 Tytuł: Użytkownik nawiguje po grafie technologii
 
 Opis:  
@@ -680,7 +684,7 @@ Kryteria akceptacji:
 - Błędy są logowane po stronie serwera
 - Użytkownik nie widzi technicznych szczegółów błędu
 
-### US-021: Responsywność aplikacji na urządzeniach mobilnych
+### US-021: Responsywność aplikacji na urządzeniach mobilnych (opcjonalnie)
 Tytuł: Użytkownik korzysta z aplikacji na smartfonie
 
 Opis:  
