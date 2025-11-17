@@ -1,0 +1,57 @@
+﻿@page "/"
+@rendermode InteractiveAuto
+
+<PageTitle>Graf Technologii - DeveloperGoals</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>
+                    <span class="bi bi-diagram-3" aria-hidden="true"></span>
+                    Mój Graf Technologii
+                </h1>
+                <div>
+                    <button class="btn btn-outline-primary">
+                        <span class="bi bi-plus-circle" aria-hidden="true"></span>
+                        Dodaj własną technologię
+                    </button>
+                </div>
+            </div>
+
+            <div class="alert alert-info" role="alert">
+                <h4 class="alert-heading">
+                    <span class="bi bi-info-circle" aria-hidden="true"></span>
+                    Witaj w DeveloperGoals!
+                </h4>
+                <p>
+                    To jest strona główna z grafem technologii. 
+                    Aby rozpocząć, uzupełnij swój <a href="/profile" class="alert-link">profil</a>.
+                </p>
+                <hr>
+                <p class="mb-0">
+                    Po wypełnieniu profilu, kliknij węzeł "Start" i wybierz "Szukaj nowych technologii" 
+                    aby otrzymać pierwsze rekomendacje od AI.
+                </p>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div id="technology-graph" style="height: 600px; border: 1px solid #dee2e6; border-radius: 0.375rem; background-color: #f8f9fa;">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-center text-muted">
+                                <span class="bi bi-diagram-3" style="font-size: 4rem;" aria-hidden="true"></span>
+                                <p class="mt-3">Graf technologii zostanie tutaj wyświetlony</p>
+                                <p class="small">Integracja z biblioteką wizualizacji grafów w trakcie implementacji</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // TODO: Implementacja logiki grafu technologii
+}

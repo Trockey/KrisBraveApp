@@ -1,0 +1,34 @@
+@using Microsoft.AspNetCore.Components.Authorization
+
+<AuthorizeView>
+    <Authorized>
+        <div class="dropdown">
+            <button class="btn btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="bi bi-person-circle" aria-hidden="true"></span>
+                @context.User.Identity?.Name
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="/profile">
+                        <span class="bi bi-person" aria-hidden="true"></span>
+                        Profil
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="/login/logout">
+                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
+                        Wyloguj
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <a href="/login" class="btn btn-primary">
+            <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span>
+            Zaloguj się
+        </a>
+    </NotAuthorized>
+</AuthorizeView>
+

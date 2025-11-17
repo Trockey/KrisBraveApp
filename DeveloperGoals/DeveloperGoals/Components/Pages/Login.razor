@@ -1,0 +1,69 @@
+@page "/login"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject NavigationManager Navigation
+
+<PageTitle>Logowanie - DeveloperGoals</PageTitle>
+
+<div class="container">
+    <div class="row justify-content-center" style="margin-top: 10vh;">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <span class="bi bi-graph-up" style="font-size: 4rem; color: #0d6efd;" aria-hidden="true"></span>
+                    </div>
+                    <h1 class="h3 mb-3 fw-bold">DeveloperGoals</h1>
+                    <p class="text-muted mb-4">
+                        Inteligentna aplikacja do planowania ścieżki rozwoju programistów
+                    </p>
+
+                    <a href="/login/google" class="btn btn-primary btn-lg w-100">
+                        <span class="bi bi-google" aria-hidden="true"></span>
+                        Zaloguj się przez Google
+                    </a>
+
+                    <div class="mt-4">
+                        <p class="text-muted small mb-0">
+                            Logując się, akceptujesz nasze warunki korzystania z usługi
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-center">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <span class="bi bi-lightbulb" aria-hidden="true"></span>
+                            Jak to działa?
+                        </h5>
+                        <ul class="list-unstyled text-start mt-3">
+                            <li class="mb-2">
+                                <span class="bi bi-check-circle text-success" aria-hidden="true"></span>
+                                Wypełnij swój profil (3 minuty)
+                            </li>
+                            <li class="mb-2">
+                                <span class="bi bi-check-circle text-success" aria-hidden="true"></span>
+                                Otrzymaj rekomendacje technologii od AI
+                            </li>
+                            <li class="mb-2">
+                                <span class="bi bi-check-circle text-success" aria-hidden="true"></span>
+                                Buduj swój graf rozwoju
+                            </li>
+                            <li>
+                                <span class="bi bi-check-circle text-success" aria-hidden="true"></span>
+                                Śledź postępy w nauce
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Strona logowania - przekierowanie do Google OAuth
+}
+

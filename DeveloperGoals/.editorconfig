@@ -1,0 +1,50 @@
+root = true
+
+# Wszystkie pliki
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Pliki C#
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# Konwencje nazewnictwa
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.severity = warning
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.symbols = interface
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.style = begins_with_i
+
+dotnet_naming_symbols.interface.applicable_kinds = interface
+dotnet_naming_symbols.interface.applicable_accessibilities = *
+
+dotnet_naming_style.begins_with_i.required_prefix = I
+dotnet_naming_style.begins_with_i.capitalization = pascal_case
+
+# Preferencje kodu
+csharp_prefer_braces = true:warning
+csharp_using_directive_placement = outside_namespace:warning
+csharp_new_line_before_open_brace = all
+csharp_space_after_keywords_in_control_flow_statements = true
+
+# Nullable
+dotnet_diagnostic.CS8618.severity = none
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+
+# Pliki Razor
+[*.razor]
+indent_style = space
+indent_size = 4
+
+# Pliki JSON
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Pliki XML
+[*.{csproj,props,targets}]
+indent_style = space
+indent_size = 2
+
