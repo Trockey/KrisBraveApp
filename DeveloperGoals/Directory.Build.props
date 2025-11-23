@@ -1,0 +1,30 @@
+<Project>
+  <ItemGroup>
+    <!-- Oficjalne analyzery Microsoftu -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers"
+                      Version="9.0.0"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- AllEnabledByDefault -> Włącza wszystkie reguły -->
+    <AnalysisMode>Default</AnalysisMode>
+
+    <!-- Reguły stylu działają także podczas builda -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Traktuj naruszenia stylu jako Warning, nie Error -->
+    <WarningsAsErrors>$(WarningsAsErrors)</WarningsAsErrors>
+
+    <!-- Włączenie domyślnych analyzerów -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+    <!-- .NET 8/9 reguły -->
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- Wyłącz CA1805 dla całego rozwiązania -->
+    <NoWarn>$(NoWarn);CA1805</NoWarn>
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+    <NoWarn>$(NoWarn);CA1508</NoWarn>
+  </PropertyGroup>
+</Project>
