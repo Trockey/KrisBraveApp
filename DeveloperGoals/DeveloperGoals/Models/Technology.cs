@@ -3,7 +3,7 @@ namespace DeveloperGoals.Models;
 /// <summary>
 /// Reprezentuje technologię w grafie użytkownika.
 /// </summary>
-public class Technology
+public class UserTechnology
 {
     /// <summary>
     /// Unikalny identyfikator technologii.

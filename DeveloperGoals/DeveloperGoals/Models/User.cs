@@ -43,7 +43,7 @@ public class User
     /// <summary>
     /// Lista technologii użytkownika.
     /// </summary>
-    public ICollection<Technology> Technologies { get; set; } = new List<Technology>();
+    public ICollection<UserTechnology> Technologies { get; set; } = new List<UserTechnology>();
 
     /// <summary>
     /// Lista zależności między technologiami (graf).

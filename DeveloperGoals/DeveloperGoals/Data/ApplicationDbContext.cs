@@ -26,7 +26,7 @@ public class ApplicationDbContext : DbContext
     /// <summary>
     /// Tabela technologii.
     /// </summary>
-    public DbSet<Technology> Technologies { get; set; } = null!;
+    public DbSet<UserTechnology> UserTechnologies { get; set; } = null!;
 
     /// <summary>
     /// Tabela zależności między technologiami.
@@ -54,7 +54,7 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey<UserProfile>(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Relacja 1:N z Technology
+            // Relacja 1:N z UserTechnology
             entity.HasMany(e => e.Technologies)
                 .WithOne(e => e.User)
                 .HasForeignKey(e => e.UserId)
@@ -78,8 +78,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
         });
 
-        // Konfiguracja Technology
-        modelBuilder.Entity<Technology>(entity =>
+        // Konfiguracja UserTechnology
+        modelBuilder.Entity<UserTechnology>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.UserId, e.Name });

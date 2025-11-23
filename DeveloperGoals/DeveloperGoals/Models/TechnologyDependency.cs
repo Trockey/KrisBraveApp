@@ -29,7 +29,7 @@ public class TechnologyDependency
     /// <summary>
     /// Technologia źródłowa.
     /// </summary>
-    public Technology? FromTechnology { get; set; }
+    public UserTechnology? FromTechnology { get; set; }
 
     /// <summary>
     /// ID technologii docelowej (do której prowadzi krawędź).
@@ -39,7 +39,7 @@ public class TechnologyDependency
     /// <summary>
     /// Technologia docelowa.
     /// </summary>
-    public Technology ToTechnology { get; set; } = null!;
+    public UserTechnology ToTechnology { get; set; } = null!;
 
     /// <summary>
     /// Data utworzenia zależności.
