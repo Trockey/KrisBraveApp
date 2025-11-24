@@ -1,0 +1,1 @@
+Inna baza postgres na Docker: developergoals_dev, developergoals
