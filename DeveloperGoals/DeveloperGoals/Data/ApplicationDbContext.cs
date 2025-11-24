@@ -33,6 +33,16 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<TechnologyDependency> TechnologyDependencies { get; set; } = null!;
 
+    /// <summary>
+    /// Tabela definicji technologii (wspólny słownik).
+    /// </summary>
+    public DbSet<TechnologyDefinition> TechnologyDefinitions { get; set; } = null!;
+
+    /// <summary>
+    /// Tabela ignorowanych technologii.
+    /// </summary>
+    public DbSet<IgnoredTechnology> IgnoredTechnologies { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -65,6 +75,12 @@ public class ApplicationDbContext : DbContext
                 .WithOne(e => e.User)
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Relacja 1:N z IgnoredTechnology
+            entity.HasMany(e => e.IgnoredTechnologies)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Konfiguracja UserProfile
@@ -83,6 +99,8 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.UserId, e.Name });
+            entity.Property(e => e.UserId).IsRequired();
+            entity.Property(e => e.TechnologyDefinitionId).IsRequired();
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Category).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Tag).IsRequired();
@@ -91,8 +109,15 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Status).IsRequired();
             entity.Property(e => e.Progress).IsRequired();
             entity.Property(e => e.IsCustom).IsRequired();
+            entity.Property(e => e.IsStart).IsRequired();
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.AiReasoning).HasMaxLength(1000);
+
+            // Relacja N:1 z TechnologyDefinition
+            entity.HasOne(e => e.TechnologyDefinition)
+                .WithMany(e => e.UserTechnologies)
+                .HasForeignKey(e => e.TechnologyDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Konfiguracja TechnologyDependency
@@ -100,6 +125,8 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => new { e.UserId, e.FromTechnologyId, e.ToTechnologyId }).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.FromTechnologyId);
 
             // Relacja z FromTechnology (opcjonalna - dla węzła Start)
             entity.HasOne(e => e.FromTechnology)
@@ -115,6 +142,48 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.CreatedAt).IsRequired();
         });
+
+        // Konfiguracja TechnologyDefinition
+        modelBuilder.Entity<TechnologyDefinition>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.Name, e.Prefix, e.Tag }).IsUnique();
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Prefix).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Tag).IsRequired();
+            entity.Property(e => e.SystemDescription).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).IsRequired();
+
+            // Seed data dla węzła "Start"
+            entity.HasData(new TechnologyDefinition
+            {
+                Id = 1,
+                Name = "Start",
+                Prefix = "System",
+                Tag = TechnologyTag.Technologia,
+                SystemDescription = "Węzeł startowy grafu technologii. Automatycznie tworzony dla każdego użytkownika.",
+                CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
+        });
+
+        // Konfiguracja IgnoredTechnology
+        modelBuilder.Entity<IgnoredTechnology>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.Name, e.Category }).IsUnique();
+            entity.HasIndex(e => e.UserId);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Category).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Tag).IsRequired();
+            entity.Property(e => e.SystemDescription).IsRequired().HasMaxLength(1000);
+            entity.Property(e => e.AiReasoning).HasMaxLength(1000);
+            entity.Property(e => e.IgnoredAt).IsRequired();
+
+            // Relacja z ContextTechnology (opcjonalna)
+            entity.HasOne(e => e.ContextTechnology)
+                .WithMany()
+                .HasForeignKey(e => e.ContextTechnologyId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
     }
 }
-

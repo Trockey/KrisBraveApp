@@ -21,7 +21,17 @@ public class UserTechnology
     public User User { get; set; } = null!;
 
     /// <summary>
-    /// Nazwa technologii z prefiksem.
+    /// ID definicji technologii (klucz obcy do TechnologyDefinitions).
+    /// </summary>
+    public int TechnologyDefinitionId { get; set; }
+
+    /// <summary>
+    /// Definicja technologii (relacja N:1).
+    /// </summary>
+    public TechnologyDefinition TechnologyDefinition { get; set; } = null!;
+
+    /// <summary>
+    /// Nazwa technologii z prefiksem (denormalizacja dla performance).
     /// Przykład: "DotNet - Entity Framework"
     /// </summary>
     public string Name { get; set; } = string.Empty;
@@ -63,6 +73,11 @@ public class UserTechnology
     public bool IsCustom { get; set; } = false;
 
     /// <summary>
+    /// Czy to węzeł startowy grafu. Węzeł startowy nie może być usunięty.
+    /// </summary>
+    public bool IsStart { get; set; } = false;
+
+    /// <summary>
     /// Data dodania technologii.
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -95,7 +110,5 @@ public enum TechnologyTag
 /// </summary>
 public enum TechnologyStatus
 {
-    Active = 1,
-    Ignored = 2
+    Active = 1
 }
-

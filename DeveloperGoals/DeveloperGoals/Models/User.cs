@@ -49,5 +49,10 @@ public class User
     /// Lista zależności między technologiami (graf).
     /// </summary>
     public ICollection<TechnologyDependency> TechnologyDependencies { get; set; } = new List<TechnologyDependency>();
+
+    /// <summary>
+    /// Lista ignorowanych technologii.
+    /// </summary>
+    public ICollection<IgnoredTechnology> IgnoredTechnologies { get; set; } = new List<IgnoredTechnology>();
 }
 
