@@ -110,5 +110,7 @@ public enum TechnologyTag
 /// </summary>
 public enum TechnologyStatus
 {
-    Active = 1
+    Active = 1,
+    Ignored = 2
 }
+
