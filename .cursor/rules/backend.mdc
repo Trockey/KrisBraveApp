@@ -1,0 +1,8 @@
+---
+alwaysApply: false
+---
+### Backend and Database
+
+- Use Supabase for backend services
+- Follow Supabase guidelines for security and peformance
+- Use Zos schemas to validate data exchanged with the backend

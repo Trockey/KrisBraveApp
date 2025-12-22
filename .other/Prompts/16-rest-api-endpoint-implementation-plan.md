@@ -4,27 +4,217 @@ Zanim zaczniemy, zapoznaj się z poniższymi informacjami:
 
 1. Route API specification:
 <route_api_specification>
-{{route-api-specification}} <- przekopiuj opis endpointa z api-plan.md
+
+      #### POST /api/ai/recommendations
+      **Description:** Generates AI recommendations for next technologies to learn. Uses in-memory cache (24h TTL). No rate limiting.  
+      **Authentication:** Required
+
+      **Request Body:**
+      ```json
+      {
+        "fromTechnologyId": 1002,
+        "contextTechnologyIds": [1001, 1002, 1003]
+      }
+      ```
+
+      **Validation Rules:**
+      - `fromTechnologyId`: Required, technology must belong to user
+      - `contextTechnologyIds`: Optional, array of user's technology IDs for additional context
+      - User must have completed profile
+
+      **Response 200:**
+      ```json
+      {
+        "recommendations": [
+          {
+            "technologyDefinitionId": 45,
+            "name": "DotNet - LINQ Advanced",
+            "prefix": "DotNet",
+            "tag": "Technologia",
+            "systemDescription": "Advanced Language Integrated Query techniques for data manipulation",
+            "aiReasoning": "Natural progression after Entity Framework, helps optimize database queries",
+            "isAlreadyInGraph": false
+          },
+          {
+            "technologyDefinitionId": 67,
+            "name": "PostgreSQL - Indexing Strategies",
+            "prefix": "PostgreSQL",
+            "tag": "BazaDanych",
+            "systemDescription": "Performance optimization through proper database indexing",
+            "aiReasoning": "Complements Entity Framework knowledge, highly relevant for backend developers",
+            "isAlreadyInGraph": false
+          }
+        ],
+        "count": 10,
+        "fromCache": false,
+        "cacheExpiresAt": "2025-12-02T14:30:00Z",
+        "generatedAt": "2025-12-01T14:30:00Z"
+      }
+      ```
+
+      **Response 400:**
+      ```json
+      {
+        "error": "ValidationError",
+        "message": "Profile is incomplete. Please complete your profile first."
+      }
+      ```
+
+      **Response 404:**
+      ```json
+      {
+        "error": "NotFound",
+        "message": "Source technology not found"
+      }
+      ```
+
+      **Response 408:**
+      ```json
+      {
+        "error": "Timeout",
+        "message": "AI service did not respond within 20 seconds. Please try again."
+      }
+      ```
+
+      **Response 500:**
+      ```json
+      {
+        "error": "AIServiceError",
+        "message": "Failed to generate recommendations. Please try again later.",
+        "details": "OpenRouter API returned error 503"
+      }
+      ```
+
+      **Response 502:**
+      ```json
+      {
+        "error": "BadGateway",
+        "message": "AI service returned invalid response format"
+      }
+      ```
+
 </route_api_specification>
 
 2. Related database resources:
 <related_db_resources>
-{{db-resources}} <- przekopiuj z tabele i relacje z db-plan.md
+
+      Kluczowe tabele i ich relacje
+
+      ##### **A. Warstwa użytkowników**
+
+      **Users** (tabela główna)
+      ```
+      - Id: int (PK)
+      - GoogleId: varchar(255) UNIQUE, NOT NULL, indexed
+      - Email: varchar(255), NOT NULL, indexed
+      - Name: varchar(255), NOT NULL (DisplayName z Google)
+      - CreatedAt: timestamp, NOT NULL
+      - LastLoginAt: timestamp, NULL
+      ```
+
+      **UserProfiles** (1:1 z Users)
+      ```
+      - Id: int (PK)
+      - UserId: int (FK → Users, UNIQUE, CASCADE)
+      - MainTechnologies: varchar(1000), NOT NULL (CSV lub lista oddzielona przecinkami)
+      - Role: int (enum → Programista, Tester, Analityk, DataScienceSpecialist)
+      - DevelopmentArea: int (enum → UserInterface, Backend, FullStack, Testing, DataScience, DevOps)
+      - CreatedAt: timestamp, NOT NULL
+      - UpdatedAt: timestamp, NULL
+      ```
+
+      ##### **B. Warstwa technologii**
+
+      **TechnologyDefinitions** (słownik wspólnych technologii)
+      ```
+      - Id: int (PK)
+      - Name: varchar(255), NOT NULL (np. "DotNet - Entity Framework")
+      - Prefix: varchar(100), NOT NULL (np. "DotNet", "Java", "JavaScript")
+      - Tag: int (enum → Technologia, Framework, BazaDanych, Metodologia, Narzedzie)
+      - SystemDescription: varchar(1000), NOT NULL (opis z AI)
+      - CreatedAt: timestamp, NOT NULL
+      - UNIQUE na (Name, Prefix, Tag) - jedna definicja
+      - Specjalny rekord: Id=1, Name="Start" dla węzła startowego
+      ```
+
+      **UserTechnologies** (instancje technologii użytkownika)
+      ```
+      - Id: int (PK)
+      - UserId: int (FK → Users, CASCADE)
+      - TechnologyDefinitionId: int (FK → TechnologyDefinitions, RESTRICT)
+      - PrivateDescription: varchar(2000), NULL (notatki użytkownika)
+      - Progress: int (0-100), NOT NULL, default 0
+      - Status: int (enum → Active, Ignored)
+      - IsCustom: bool, NOT NULL, default false (dodana ręcznie vs AI)
+      - IsStart: bool, NOT NULL, default false (węzeł startowy)
+      - AiReasoning: varchar(1000), NULL (dlaczego AI polecił)
+      - CreatedAt: timestamp, NOT NULL
+      - UpdatedAt: timestamp, NULL
+      - Index na (UserId, Status)
+      - Constraint: CHECK (Progress >= 0 AND Progress <= 100)
+      - Constraint: nie można usunąć jeśli IsStart = true (logika aplikacji)
+      ```
+
+      ##### **C. Warstwa grafu**
+
+      **TechnologyDependencies** (krawędzie grafu)
+      ```
+      - Id: int (PK)
+      - UserId: int (FK → Users, CASCADE)
+      - FromTechnologyId: int (FK → UserTechnologies, RESTRICT), NULL (dla Start)
+      - ToTechnologyId: int (FK → UserTechnologies, CASCADE), NOT NULL
+      - CreatedAt: timestamp, NOT NULL (dla sortowania kolejności)
+      - UNIQUE na (UserId, FromTechnologyId, ToTechnologyId)
+      - Index na UserId
+      - Index na FromTechnologyId
+      ```
+
+      **IgnoredTechnologies** (archiwum ignorowanych)
+      ```
+      - Id: int (PK)
+      - UserId: int (FK → Users, CASCADE)
+      - Name: varchar(255), NOT NULL
+      - Category: varchar(100), NOT NULL
+      - Tag: int (enum), NOT NULL
+      - SystemDescription: varchar(1000), NOT NULL
+      - AiReasoning: varchar(1000), NULL
+      - ContextTechnologyId: int (FK → UserTechnologies, SET NULL), NULL
+      - IgnoredAt: timestamp, NOT NULL
+      - UNIQUE na (UserId, Name, Category)
+      - Index na UserId
+      ```
+
+      ##### **D. Relacje między encjami**
+
+      ```
+      Users 1───1 UserProfiles
+      Users 1───N UserTechnologies
+      Users 1───N TechnologyDependencies
+      Users 1───N IgnoredTechnologies
+      TechnologyDefinitions 1───N UserTechnologies
+      UserTechnologies 1───N TechnologyDependencies (jako FromTechnology)
+      UserTechnologies 1───N TechnologyDependencies (jako ToTechnology)
+      UserTechnologies 1───N IgnoredTechnologies (jako ContextTechnology, opcjonalne)
+      ```
+
+
 </related_db_resources>
 
 3. Definicje typów:
 <type_definitions>
-{{types}} <- zamień na referencje do definicji typów (np. @types)
+Get from file @Types.cs
 </type_definitions>
 
 3. Tech stack:
 <tech_stack>
-{{tech-stack}} <- zamień na referencje do @tech-stack.md
+@tech-stack.md
 </tech_stack>
 
 4. Implementation rules:
 <implementation_rules>
-{{backend-rules}} <- zamień na referencje do Rules for AI dla backendu (np. @shared.mdc, @backend.mdc, @astro.mdc)
+
+@backend.mdc
+
 </implementation_rules>
 
 Twoim zadaniem jest stworzenie kompleksowego planu wdrożenia endpointu interfejsu API REST. Przed dostarczeniem ostatecznego planu użyj znaczników <analysis>, aby przeanalizować informacje i nakreślić swoje podejście. W tej analizie upewnij się, że:
