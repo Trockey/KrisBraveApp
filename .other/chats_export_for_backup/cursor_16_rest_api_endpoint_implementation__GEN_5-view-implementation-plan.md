@@ -1,3 +1,105 @@
+# Rest API endpoint implementation plan
+_Exported on 1/2/2026 at 01:52:32 GMT+1 from Cursor (2.2.44)_
+
+---
+
+**User**
+
+@16-rest-api-endpoint-implementation-plan.md (1-296) 
+
+---
+
+**Cursor**
+
+Przeanalizuję specyfikację endpointu i stworzę szczegółowy plan implementacji.
+
+<analysis>
+
+## Analiza specyfikacji endpointu POST /api/ai/recommendations
+
+### 1. Kluczowe punkty specyfikacji API
+
+- **Endpoint:** POST /api/ai/recommendations
+- **Cel:** Generowanie rekomendacji AI dla kolejnych technologii do nauki
+- **Autentykacja:** Wymagana
+- **Cache:** In-memory z TTL 24h
+- **Rate limiting:** Brak
+- **Timeout:** 20 sekund (z Response 408)
+
+### 2. Parametry wymagane i opcjonalne
+
+**Wymagane:**
+- `fromTechnologyId` (int) - ID technologii użytkownika, od której generujemy rekomendacje
+- Użytkownik musi mieć ukończony profil
+
+**Opcjonalne:**
+- `contextTechnologyIds` (List<int>) - dodatkowy kontekst technologii użytkownika
+
+### 3. Niezbędne typy DTO i Command Modele
+
+**Istniejące w Types.cs:**
+- `GenerateRecommendationsCommand` - command dla request body (linie 363-367)
+- `RecommendationDto` - pojedyncza rekomendacja (linie 372-381)
+- `RecommendationsResponseDto` - response z listą rekomendacji (linie 386-393)
+- `ErrorResponseDto` - standardowy format błędów (linie 676-682)
+
+**Dodatkowe potrzebne typy:**
+Wszystkie wymagane typy już istnieją w Types.cs.
+
+### 4. Logika service
+
+Potrzebny będzie nowy serwis lub rozszerzenie istniejącego:
+- **AIRecommendationService** - główna logika generowania rekomendacji
+  - Walidacja użytkownika i profilu
+  - Walidacja technologii źródłowej
+  - Walidacja technologii kontekstowych
+  - Sprawdzanie cache
+  - Wywołanie API OpenRouter
+  - Parsowanie odpowiedzi AI
+  - Sprawdzanie czy technologie już są w grafie użytkownika
+  - Zapis do cache
+
+### 5. Walidacja danych wejściowych
+
+**Walidacje:**
+1. Użytkownik musi być zalogowany (middleware)
+2. Profil użytkownika musi być kompletny (UserProfile exists)
+3. `fromTechnologyId` musi istnieć i należeć do użytkownika
+4. Wszystkie ID z `contextTechnologyIds` muszą należeć do użytkownika
+5. Technologia źródłowa musi mieć Status = Active
+
+### 6. Rejestrowanie błędów
+
+Błędy do logowania:
+- Timeout AI service (408)
+- Błędy AI service (500)
+- Nieprawidłowa odpowiedź AI (502)
+- Błędy parsowania odpowiedzi AI
+- Błędy połączenia z OpenRouter
+
+### 7. Zagrożenia bezpieczeństwa
+
+1. **Injection attacks:** Walidacja wszystkich ID przed zapytaniami do bazy
+2. **Unauthorized access:** Sprawdzenie że technologie należą do zalogowanego użytkownika
+3. **Cache poisoning:** Klucz cache musi zawierać userId
+4. **DoS przez długie requesty:** Timeout 20s
+5. **Data leakage:** Nie zwracać technologii innych użytkowników
+6. **API key exposure:** OpenRouter API key w bezpiecznej konfiguracji
+
+### 8. Scenariusze błędów i kody statusu
+
+- **400 ValidationError:** Profil niekompletny, nieprawidłowe ID technologii
+- **401 Unauthorized:** Brak autentykacji (middleware)
+- **404 NotFound:** Technologia źródłowa nie istnieje
+- **408 Timeout:** AI service nie odpowiedział w 20s
+- **500 AIServiceError:** Błąd API OpenRouter
+- **502 BadGateway:** Nieprawidłowy format odpowiedzi AI
+
+</analysis>
+
+Teraz przygotowuję szczegółowy plan implementacji:
+
+```markdown
 # API Endpoint Implementation Plan: POST /api/ai/recommendations
 
 ## 1. Przegląd punktu końcowego
@@ -6,7 +108,7 @@ Endpoint `POST /api/ai/recommendations` generuje inteligentne rekomendacje kolej
 
 **Kluczowe funkcjonalności:**
 - Generowanie rekomendacji AI na podstawie technologii źródłowej
-- Uwzględnianie kontekstu dodatkowych technologii użytkownika, które zostały dodane do grafu
+- Uwzględnianie kontekstu dodatkowych technologii użytkownika
 - Cache in-memory z TTL 24h
 - Timeout 20 sekund dla wywołań AI
 - Sprawdzanie czy rekomendowane technologie już istnieją w grafie użytkownika
@@ -1045,4 +1147,31 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 5. A/B testing różnych promptów AI
 6. Analytics i tracking użycia rekomendacji
 7. Feedback loop (czy użytkownik dodał rekomendację)
+
+```
+
+Stworzyłem szczegółowy plan implementacji endpointu `POST /api/ai/recommendations`. Plan zawiera:
+
+## Główne sekcje:
+
+1. **Przegląd punktu końcowego** - cel i kluczowe funkcjonalności
+2. **Szczegóły żądania** - metoda HTTP, parametry, walidacja
+3. **Wykorzystywane typy** - DTOs i Command Models z Types.cs
+4. **Szczegóły odpowiedzi** - wszystkie kody statusu (200, 400, 404, 408, 500, 502)
+5. **Przepływ danych** - szczegółowy diagram z interakcjami z bazą danych i OpenRouter API
+6. **Względy bezpieczeństwa** - autentykacja, autoryzacja, walidacja, ochrona przed atakami
+7. **Obsługa błędów** - hierarchia wyjątków, scenariusze błędów, middleware
+8. **Rozważania dotyczące wydajności** - cache strategy, optymalizacje zapytań, metryki
+9. **Etapy wdrożenia** - 10 kroków z szacowanym czasem (15-20 godzin)
+
+## Kluczowe elementy implementacji:
+
+- **Cache in-memory** z TTL 24h dla optymalizacji kosztów AI
+- **Timeout 20 sekund** dla wywołań OpenRouter API
+- **6 typów custom exceptions** dla różnych scenariuszy błędów
+- **GlobalExceptionHandler** dla spójnej obsługi błędów
+- **Walidacja wielopoziomowa** - profil, technologie, autoryzacja
+- **Optymalizacje EF Core** - eager loading, AsNoTracking, projekcje
+
+Plan został zapisany w `.ai/view-implementation-plan.md` i jest gotowy do użycia przez zespół programistów.
 
