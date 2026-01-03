@@ -582,7 +582,7 @@ public class AdminAiStatsDto
 /// </summary>
 public class AdminMetricsDto
 {
-    public AdminKpiDto Kpis { get; set; } = null!;
+    public AdminKpiDto Kpi { get; set; } = null!;
     public AdminUserStatsDto Users { get; set; } = null!;
     public AdminTechnologyStatsDto Technologies { get; set; } = null!;
     public AdminAiStatsDto Ai { get; set; } = null!;

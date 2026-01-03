@@ -52,3 +52,11 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Visual Studio
+.vs/KrisBraveApp/v17/.wsuo
+.vs/KrisBraveApp/v17/DocumentLayout.json
+.vs/KrisBraveApp/FileContentIndex
+.vs
+*.csproj.user
+
