@@ -60,4 +60,4 @@ nunit-*.xml
 .vs
 *.csproj.user
 
-.vscode
+Settings.json
