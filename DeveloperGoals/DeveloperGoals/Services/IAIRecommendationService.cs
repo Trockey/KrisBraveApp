@@ -1,3 +1,4 @@
+using System.Numerics;
 using DeveloperGoals.DTOs;
 
 namespace DeveloperGoals.Services;
@@ -15,7 +16,7 @@ public interface IAIRecommendationService
     /// <param name="cancellationToken">Token anulowania</param>
     /// <returns>Response z rekomendacjami</returns>
     Task<RecommendationsResponseDto> GenerateRecommendationsAsync(
-        int userId,
+        BigInteger userId,
         GenerateRecommendationsCommand command,
         CancellationToken cancellationToken = default
     );

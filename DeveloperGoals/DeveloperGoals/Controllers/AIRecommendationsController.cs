@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Numerics;
 using System.Security.Claims;
 using DeveloperGoals.DTOs;
 using DeveloperGoals.Services;
@@ -50,8 +51,9 @@ public class AIRecommendationsController : ControllerBase
         CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+      
+        BigInteger userId;
+        if (string.IsNullOrEmpty(userIdClaim) || !BigInteger.TryParse(userIdClaim, out userId))
         {
             _logger.LogWarning("User ID not found in claims");
             return Unauthorized(new ErrorResponseDto

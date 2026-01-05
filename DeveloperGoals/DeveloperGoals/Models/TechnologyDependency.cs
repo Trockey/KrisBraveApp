@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace DeveloperGoals.Models;
 
 /// <summary>
@@ -13,7 +15,7 @@ public class TechnologyDependency
     /// <summary>
     /// ID użytkownika (klucz obcy).
     /// </summary>
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
 
     /// <summary>
     /// Użytkownik (relacja N:1).

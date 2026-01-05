@@ -1,3 +1,4 @@
+using System.Numerics;
 using DeveloperGoals.Models;
 
 namespace DeveloperGoals.DTOs;
@@ -56,7 +57,7 @@ public class LogoutResponseDto
 public class UserProfileDto
 {
     public int Id { get; set; }
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
     public List<string> MainTechnologies { get; set; } = new();
     public string Role { get; set; } = string.Empty;
     public string DevelopmentArea { get; set; } = string.Empty;
@@ -80,7 +81,7 @@ public class CreateProfileCommand
 public class CreateProfileResponseDto
 {
     public int Id { get; set; }
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
     public List<string> MainTechnologies { get; set; } = new();
     public string Role { get; set; } = string.Empty;
     public string DevelopmentArea { get; set; } = string.Empty;
@@ -108,7 +109,7 @@ public class UpdateProfileCommand
 public class TechnologyDto
 {
     public int Id { get; set; }
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
     public int TechnologyDefinitionId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Prefix { get; set; } = string.Empty;
@@ -331,7 +332,7 @@ public class TechnologyGraphDto
 public class DependencyDto
 {
     public int Id { get; set; }
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
     public int? FromTechnologyId { get; set; }
     public int ToTechnologyId { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -402,7 +403,7 @@ public class RecommendationsResponseDto
 public class IgnoredTechnologyDto
 {
     public int Id { get; set; }
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Tag { get; set; } = string.Empty;

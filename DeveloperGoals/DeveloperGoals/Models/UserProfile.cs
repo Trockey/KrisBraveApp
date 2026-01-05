@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace DeveloperGoals.Models;
 
 /// <summary>
@@ -13,7 +15,7 @@ public class UserProfile
     /// <summary>
     /// ID użytkownika (klucz obcy).
     /// </summary>
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
 
     /// <summary>
     /// Użytkownik (relacja 1:1).
@@ -70,4 +72,3 @@ public enum DevelopmentArea
     DataScience = 5,
     DevOps = 6
 }
-

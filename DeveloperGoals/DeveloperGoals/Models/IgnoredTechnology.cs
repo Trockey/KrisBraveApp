@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace DeveloperGoals.Models;
 
 /// <summary>
@@ -14,7 +16,7 @@ public class IgnoredTechnology
     /// <summary>
     /// ID użytkownika (klucz obcy).
     /// </summary>
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
 
     /// <summary>
     /// Użytkownik (relacja N:1).

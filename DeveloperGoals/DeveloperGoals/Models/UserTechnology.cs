@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace DeveloperGoals.Models;
 
 /// <summary>
@@ -13,7 +15,7 @@ public class UserTechnology
     /// <summary>
     /// ID użytkownika (klucz obcy).
     /// </summary>
-    public int UserId { get; set; }
+    public BigInteger UserId { get; set; }
 
     /// <summary>
     /// Użytkownik (relacja N:1).
@@ -113,4 +115,3 @@ public enum TechnologyStatus
     Active = 1,
     Ignored = 2
 }
-

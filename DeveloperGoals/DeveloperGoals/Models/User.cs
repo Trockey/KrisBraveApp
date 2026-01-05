@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace DeveloperGoals.Models;
 
 /// <summary>
@@ -8,7 +10,7 @@ public class User
     /// <summary>
     /// Unikalny identyfikator użytkownika.
     /// </summary>
-    public int Id { get; set; }
+    public BigInteger Id { get; set; }
 
     /// <summary>
     /// ID użytkownika z Google OAuth.
@@ -55,4 +57,3 @@ public class User
     /// </summary>
     public ICollection<IgnoredTechnology> IgnoredTechnologies { get; set; } = new List<IgnoredTechnology>();
 }
-

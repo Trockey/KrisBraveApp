@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using DeveloperGoals.Configuration;
@@ -37,7 +38,7 @@ public class AIRecommendationService : IAIRecommendationService
     }
 
     public async Task<RecommendationsResponseDto> GenerateRecommendationsAsync(
-        int userId,
+        BigInteger userId,
         GenerateRecommendationsCommand command,
         CancellationToken cancellationToken = default)
     {
@@ -98,7 +99,7 @@ public class AIRecommendationService : IAIRecommendationService
     }
 
     private async Task<UserProfile> ValidateUserProfileAsync(
-        int userId,
+        BigInteger userId,
         CancellationToken cancellationToken)
     {
         var profile = await _context.UserProfiles
@@ -124,7 +125,7 @@ public class AIRecommendationService : IAIRecommendationService
     }
 
     private async Task<TechnologyDto> ValidateSourceTechnologyAsync(
-        int userId,
+        BigInteger userId,
         int fromTechnologyId,
         CancellationToken cancellationToken)
     {
@@ -152,7 +153,7 @@ public class AIRecommendationService : IAIRecommendationService
     }
 
     private async Task<List<TechnologyDto>> ValidateContextTechnologiesAsync(
-        int userId,
+        BigInteger userId,
         List<int>? contextTechnologyIds,
         CancellationToken cancellationToken)
     {
@@ -195,7 +196,7 @@ public class AIRecommendationService : IAIRecommendationService
     }
 
     private async Task<HashSet<int>> GetExistingTechnologyIdsAsync(
-        int userId,
+        BigInteger userId,
         CancellationToken cancellationToken)
     {
         return await _context.UserTechnologies
@@ -215,7 +216,8 @@ public class AIRecommendationService : IAIRecommendationService
         foreach (var aiRec in aiRecommendations)
         {
             // Parsowanie tagu
-            if (!Enum.TryParse<TechnologyTag>(aiRec.Tag, out var tag))
+            TechnologyTag tag;
+            if (!Enum.TryParse<TechnologyTag>(aiRec.Tag, out tag))
             {
                 _logger.LogWarning("Invalid tag '{Tag}' in AI recommendation, defaulting to Technologia", aiRec.Tag);
                 tag = TechnologyTag.Technologia;
@@ -267,7 +269,7 @@ public class AIRecommendationService : IAIRecommendationService
         return new TechnologyDto
         {
             Id = technology.Id,
-            UserId = technology.UserId,
+            UserId = (ulong)technology.UserId,
             TechnologyDefinitionId = technology.TechnologyDefinitionId,
             Name = technology.Name,
             Prefix = technology.Category,
@@ -284,7 +286,7 @@ public class AIRecommendationService : IAIRecommendationService
         };
     }
 
-    private string BuildCacheKey(int userId, GenerateRecommendationsCommand command)
+    private string BuildCacheKey(BigInteger userId, GenerateRecommendationsCommand command)
     {
         // Sortowanie contextTechnologyIds dla spójności klucza cache
         var contextIds = command.ContextTechnologyIds?.OrderBy(id => id).ToList() ?? new List<int>();
