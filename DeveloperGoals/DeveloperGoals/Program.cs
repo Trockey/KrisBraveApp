@@ -73,6 +73,23 @@ public class Program
             client.DefaultRequestHeaders.Add("X-Title", appTitle);
         });
 
+        // HttpClient for Blazor Server components
+        builder.Services.AddScoped(sp =>
+        {
+            var navigationManager = sp.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
+            return new HttpClient
+            // TODO: check if code below is necesary
+            // (new HttpClientHandler
+            //     {
+            //         UseCookies = true,
+            //         CookieContainer = new System.Net.CookieContainer()
+            //     }
+            // )
+            {
+                BaseAddress = new Uri(navigationManager.BaseUri)
+            };
+        });
+
         // AI Services
         builder.Services.AddScoped<IAIRecommendationService, AIRecommendationService>();
 

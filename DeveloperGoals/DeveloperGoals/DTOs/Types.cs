@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using DeveloperGoals.Models;
 
 namespace DeveloperGoals.DTOs;
@@ -73,6 +73,7 @@ public class CreateProfileCommand
     public List<string> MainTechnologies { get; set; } = new();
     public string Role { get; set; } = string.Empty;
     public string DevelopmentArea { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -97,6 +98,7 @@ public class UpdateProfileCommand
     public List<string> MainTechnologies { get; set; } = new();
     public string Role { get; set; } = string.Empty;
     public string DevelopmentArea { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
 }
 
 // ============================================================================

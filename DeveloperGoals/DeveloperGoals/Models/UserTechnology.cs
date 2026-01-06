@@ -93,6 +93,14 @@ public class UserTechnology
     /// Reasoning z AI (dlaczego technologia została polecona).
     /// </summary>
     public string? AiReasoning { get; set; }
+
+    /// <summary>
+    /// Prefix/kategoria główna technologii.
+    /// Przykład: "DotNet", "Java", "JavaScript", "Python"
+    /// </summary>
+
+    public string Prefix { get; internal set; }
+
 }
 
 /// <summary>
