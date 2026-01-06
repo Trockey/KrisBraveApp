@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using DeveloperGoals.Configuration;
@@ -38,23 +38,36 @@ public class AIRecommendationService : IAIRecommendationService
     }
 
     public async Task<RecommendationsResponseDto> GenerateRecommendationsAsync(
-        BigInteger userId,
+        BigInteger googleUserId,
         GenerateRecommendationsCommand command,
         CancellationToken cancellationToken = default)
     {
+        // 0. Sprawdzenie istnienia użytkownika
+        var user = await _context.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.GoogleId == googleUserId.ToString(), cancellationToken);
+
+        if(user == null)
+        {
+            throw new ProfileIncompleteException(
+                "User not found. Please complete your profile first.");
+        }
+
+        var userId = user.Id;
+
         // 1. Sprawdź cache
-        var cacheKey = BuildCacheKey(userId, command);
+        var cacheKey = BuildCacheKey(googleUserId, command);
         if (_cache.TryGetValue<RecommendationsResponseDto>(cacheKey, out var cachedResult))
         {
             _logger.LogInformation("Cache hit for user {UserId}, technology {TechId}", 
-                userId, command.FromTechnologyId);
+                googleUserId, command.FromTechnologyId);
             
             cachedResult!.FromCache = true;
             return cachedResult;
         }
 
         _logger.LogInformation("Cache miss for user {UserId}, technology {TechId}", 
-            userId, command.FromTechnologyId);
+            googleUserId, command.FromTechnologyId);
 
         // 2. Walidacja profilu użytkownika
         var profile = await ValidateUserProfileAsync(userId, cancellationToken);

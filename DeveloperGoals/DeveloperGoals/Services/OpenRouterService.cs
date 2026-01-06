@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using DeveloperGoals.Configuration;
 using DeveloperGoals.DTOs;
@@ -151,22 +151,29 @@ IMPORTANT RULES:
                 $"- {t.Name} ({t.Prefix}): {t.SystemDescription}"))
             : "None";
 
-        return $@"Generate 10 technology recommendations for the following context:
+        var prompt1 = $@"Generate 10 technology recommendations for the following context:
 
 USER PROFILE:
 - Role: {profile.Role}
 - Development Area: {profile.DevelopmentArea}
 - Main Technologies: {mainTechString}
 
-CURRENT TECHNOLOGY (learning from):
+";
+
+        var prompt2 = $@"CURRENT TECHNOLOGY (learning from):
 Name: {sourceTechnology.Name}
 Prefix: {sourceTechnology.Prefix}
 Description: {sourceTechnology.SystemDescription}
 
-CONTEXT TECHNOLOGIES (already in user's graph):
+";
+
+
+        var prompt3 = $@"CONTEXT TECHNOLOGIES (already in user's graph):
 {contextTechString}
 
-Return a JSON array with exactly 10 recommendations in this format:
+";
+
+        var prompt4 = $@"Return a JSON array with exactly 10 recommendations in this format:
 [
   {{
     ""name"": ""Prefix - Technology Name"",
@@ -178,6 +185,15 @@ Return a JSON array with exactly 10 recommendations in this format:
 ]
 
 IMPORTANT: Return ONLY the JSON array, no markdown formatting or additional text.";
+
+
+        string prompt = string.Empty;
+        if(sourceTechnology.Name == "Start")
+            prompt = prompt1 + prompt4;
+        else
+            prompt = prompt1 + prompt2 + prompt3 + prompt4;
+
+        return prompt;
     }
 
     private List<AIRecommendationResult> ParseAIResponse(string responseContent)

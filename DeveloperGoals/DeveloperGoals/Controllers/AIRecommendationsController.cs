@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Numerics;
 using System.Security.Claims;
 using DeveloperGoals.DTOs;
@@ -13,7 +13,8 @@ namespace DeveloperGoals.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/ai")]
-[Authorize]
+// TODO: Włączyć autoryzację po dodaniu uwierzytelniania ??
+// [Authorize]
 public class AIRecommendationsController : ControllerBase
 {
     private readonly IAIRecommendationService _recommendationService;
@@ -52,8 +53,8 @@ public class AIRecommendationsController : ControllerBase
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
       
-        BigInteger userId;
-        if (string.IsNullOrEmpty(userIdClaim) || !BigInteger.TryParse(userIdClaim, out userId))
+        BigInteger googleUserId;
+        if (string.IsNullOrEmpty(userIdClaim) || !BigInteger.TryParse(userIdClaim, out googleUserId))
         {
             _logger.LogWarning("User ID not found in claims");
             return Unauthorized(new ErrorResponseDto
@@ -65,10 +66,10 @@ public class AIRecommendationsController : ControllerBase
 
         _logger.LogInformation(
             "Generating recommendations for user {UserId}, technology {TechId}",
-            userId, command.FromTechnologyId);
+            googleUserId, command.FromTechnologyId);
 
         var result = await _recommendationService.GenerateRecommendationsAsync(
-            userId,
+            googleUserId,
             new GenerateRecommendationsCommand
             {
                 FromTechnologyId = command.FromTechnologyId,
