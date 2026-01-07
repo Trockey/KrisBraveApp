@@ -69,8 +69,13 @@ public class Program
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromSeconds(timeout);
             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+            client.DefaultRequestHeaders.Add("Referer", appUrl);
             client.DefaultRequestHeaders.Add("HTTP-Referer", appUrl);
+            // client.DefaultRequestHeaders.Add("Origin", appUrl);
             client.DefaultRequestHeaders.Add("X-Title", appTitle);
+            // client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         });
 
         // HttpClient for Blazor Server components

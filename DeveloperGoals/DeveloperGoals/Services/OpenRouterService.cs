@@ -57,14 +57,25 @@ public class OpenRouterService : IOpenRouterService
                 max_tokens = _options.MaxTokens
             };
 
+            // Użyj pełnego URL zamiast względnej ścieżki, aby uniknąć problemów z łączeniem BaseAddress
+            var baseUrl = _httpClient.BaseAddress?.ToString().TrimEnd('/') ?? _options.BaseUrl.TrimEnd('/');
+            var requestUrl = new Uri($"{baseUrl}/chat/completions");
+            
             _logger.LogInformation(
-                "Sending request to OpenRouter API for user profile with role {Role}",
+                "Sending request to OpenRouter API: {Url} for user profile with role {Role}",
+                requestUrl,
                 profile.Role);
 
             var response = await _httpClient.PostAsJsonAsync(
-                "/chat/completions",
+                requestUrl,
                 requestBody,
                 cancellationToken);
+
+            _logger.LogInformation(
+                "OpenRouter API response: Status={StatusCode}, ContentType={ContentType}, Headers={Headers}",
+                response.StatusCode,
+                response.Content.Headers.ContentType?.MediaType ?? "null",
+                string.Join(", ", response.Headers.Select(h => $"{h.Key}={string.Join(";", h.Value)}")));
 
             if (!response.IsSuccessStatusCode)
             {
@@ -77,6 +88,21 @@ public class OpenRouterService : IOpenRouterService
                 throw new OpenRouterApiException(
                     "Failed to generate recommendations. Please try again later.",
                     $"OpenRouter API returned error {response.StatusCode}");
+            }
+
+            // Sprawdź Content-Type odpowiedzi
+            var contentType = response.Content.Headers.ContentType?.MediaType;
+            if (contentType != null && !contentType.Contains("json", StringComparison.OrdinalIgnoreCase))
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError(
+                    "OpenRouter API returned non-JSON content type {ContentType}. Response: {Response}",
+                    contentType,
+                    errorContent.Length > 500 ? errorContent.Substring(0, 500) + "..." : errorContent);
+
+                throw new OpenRouterApiException(
+                    "AI service returned invalid response format. Expected JSON but received HTML.",
+                    $"Content-Type: {contentType}");
             }
 
             var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -210,6 +236,19 @@ IMPORTANT: Return ONLY the JSON array, no markdown formatting or additional text
             }
 
             var firstChoice = choices[0];
+            
+            // Sprawdź finish_reason - jeśli jest "length", odpowiedź może być niepełna
+            var finishReason = firstChoice.TryGetProperty("finish_reason", out var finishReasonProp) 
+                ? finishReasonProp.GetString() 
+                : null;
+            
+            if (finishReason == "length")
+            {
+                _logger.LogWarning(
+                    "AI response was truncated due to token limit (finish_reason: length). " +
+                    "Attempting to extract complete objects from partial response.");
+            }
+
             if (!firstChoice.TryGetProperty("message", out var message) ||
                 !message.TryGetProperty("content", out var content))
             {
@@ -235,6 +274,12 @@ IMPORTANT: Return ONLY the JSON array, no markdown formatting or additional text
             }
             aiContent = aiContent.Trim();
 
+            // Jeśli odpowiedź jest niepełna (finish_reason == "length"), spróbuj wyciągnąć kompletne obiekty
+            if (finishReason == "length")
+            {
+                aiContent = ExtractCompleteJsonObjects(aiContent);
+            }
+
             var recommendations = JsonSerializer.Deserialize<List<AIRecommendationResult>>(
                 aiContent,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -259,14 +304,107 @@ IMPORTANT: Return ONLY the JSON array, no markdown formatting or additional text
                 }
             }
 
+            if (finishReason == "length" && recommendations.Count < 10)
+            {
+                _logger.LogWarning(
+                    "AI response was truncated. Expected 10 recommendations but received only {Count}. " +
+                    "Consider increasing max_tokens in configuration.",
+                    recommendations.Count);
+            }
+
             return recommendations;
         }
         catch (JsonException ex)
         {
-            _logger.LogError(ex, "Failed to parse AI response as JSON");
+            _logger.LogError(ex, "Failed to parse AI response as JSON. Response content: {Content}", 
+                responseContent.Length > 500 ? responseContent.Substring(0, 500) + "..." : responseContent);
             throw new AIResponseParsingException(
-                "Failed to parse AI response",
+                "Failed to parse AI response. The response may be incomplete or malformed.",
                 ex);
         }
+    }
+
+    /// <summary>
+    /// Wyciąga kompletne obiekty JSON z niepełnej odpowiedzi.
+    /// Jeśli odpowiedź jest obcięta, znajduje wszystkie kompletne obiekty przed obcięciem.
+    /// </summary>
+    private string ExtractCompleteJsonObjects(string jsonContent)
+    {
+        if (string.IsNullOrWhiteSpace(jsonContent))
+        {
+            return "[]";
+        }
+
+        // Jeśli JSON zaczyna się od '[', próbuj znaleźć wszystkie kompletne obiekty
+        if (!jsonContent.TrimStart().StartsWith("["))
+        {
+            return jsonContent;
+        }
+
+        var result = new List<string>();
+        var depth = 0;
+        var inString = false;
+        var escapeNext = false;
+        var currentObjectStart = -1;
+        var braceDepth = 0;
+
+        for (int i = 0; i < jsonContent.Length; i++)
+        {
+            var ch = jsonContent[i];
+
+            if (escapeNext)
+            {
+                escapeNext = false;
+                continue;
+            }
+
+            if (ch == '\\' && inString)
+            {
+                escapeNext = true;
+                continue;
+            }
+
+            if (ch == '"' && !escapeNext)
+            {
+                inString = !inString;
+                continue;
+            }
+
+            if (inString)
+            {
+                continue;
+            }
+
+            // Śledź głębokość nawiasów klamrowych dla obiektów
+            if (ch == '{')
+            {
+                if (braceDepth == 0)
+                {
+                    currentObjectStart = i;
+                }
+                braceDepth++;
+            }
+            else if (ch == '}')
+            {
+                braceDepth--;
+                if (braceDepth == 0 && currentObjectStart >= 0)
+                {
+                    // Znaleziono kompletny obiekt
+                    var objectJson = jsonContent.Substring(currentObjectStart, i - currentObjectStart + 1);
+                    result.Add(objectJson);
+                    currentObjectStart = -1;
+                }
+            }
+        }
+
+        // Jeśli znaleziono kompletne obiekty, zwróć je jako tablicę JSON
+        if (result.Count > 0)
+        {
+            return "[" + string.Join(",", result) + "]";
+        }
+
+        // Jeśli nie znaleziono kompletnych obiektów, zwróć pustą tablicę
+        _logger.LogWarning("Could not extract any complete JSON objects from truncated response");
+        return "[]";
     }
 }
