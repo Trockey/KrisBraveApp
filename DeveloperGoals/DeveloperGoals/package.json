@@ -1,0 +1,17 @@
+{
+  "name": "developergoals",
+  "version": "1.0.0",
+  "description": "DeveloperGoals - Blazor App with Tailwind CSS and Flowbite",
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css --minify",
+    "watch:css": "npx tailwindcss -i ./Styles/app.css -o ./wwwroot/css/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.35"
+  },
+  "dependencies": {
+    "flowbite": "^2.2.1"
+  }
+}
