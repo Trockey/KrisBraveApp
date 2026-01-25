@@ -10,12 +10,17 @@ public class TechnologyService : ITechnologyService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<TechnologyService> _logger;
+    private readonly IUserStateService _userStateService;
     private const string BaseUrl = "/api/technologies";
 
-    public TechnologyService(HttpClient httpClient, ILogger<TechnologyService> logger)
+    public TechnologyService(
+        HttpClient httpClient, 
+        ILogger<TechnologyService> logger,
+        IUserStateService userStateService)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _userStateService = userStateService ?? throw new ArgumentNullException(nameof(userStateService));
     }
 
     public async Task<TechnologyGraphDto?> GetGraphAsync()
@@ -23,7 +28,13 @@ public class TechnologyService : ITechnologyService
         try
         {
             _logger.LogInformation("Pobieranie grafu technologii");
-            var response = await _httpClient.GetAsync($"{BaseUrl}/graph");
+            
+            var email = _userStateService.CurrentState.Email;
+            var url = string.IsNullOrEmpty(email) 
+                ? $"{BaseUrl}/graph" 
+                : $"{BaseUrl}/graph?email={Uri.EscapeDataString(email)}";
+            
+            var response = await _httpClient.GetAsync(url);
             
             if (!response.IsSuccessStatusCode)
             {

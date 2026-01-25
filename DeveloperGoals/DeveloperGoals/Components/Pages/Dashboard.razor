@@ -1,7 +1,9 @@
 @page "/dashboard"
+@attribute [Authorize]
 @rendermode InteractiveServer
 @using DeveloperGoals.DTOs
 @using DeveloperGoals.Services
+@using Microsoft.AspNetCore.Authorization
 @inject ITechnologyService TechnologyService
 @inject IUserStateService UserStateService
 @inject ILogger<Dashboard> Logger
@@ -16,6 +18,7 @@
             <i class="bi bi-diagram-3 text-primary-600"></i>
             Mój Graf Technologii
         </h1>
+
         @if (graphData is not null && graphData.Nodes.Any())
         {
             <div class="flex items-center gap-4">
@@ -46,10 +49,9 @@
             </div>
         </div>
     }
-
-    <!-- Error State -->
-    else if (!string.IsNullOrEmpty(errorMessage))
+    else if (!string.IsNullOrEmpty(errorMessage ))
     {
+        <!-- Error State -->
         <div class="p-4 mb-6 text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
             <div class="flex items-start gap-3">
                 <i class="bi bi-exclamation-triangle text-xl mt-0.5"></i>
@@ -66,10 +68,9 @@
             </div>
         </div>
     }
-
-    <!-- Empty State -->
     else if (graphData is null || graphData.Nodes is null || !graphData.Nodes.Any())
     {
+        <!-- Empty State -->
         <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
             <div class="p-12">
                 <div class="text-center">
@@ -88,12 +89,11 @@
             </div>
         </div>
     }
-
-    <!-- Graph Display -->
     else
     {
+        <!-- Graph Display -->
         <!-- Info Alert for Start Node -->
-        @if (graphData?.Nodes?.Count == 1 && graphData.Nodes[0].IsStart)
+        @if (graphData is not null && graphData?.Nodes?.Count == 1 && graphData.Nodes[0].IsStart)
         {
             <div class="p-4 mb-6 text-blue-800 border border-blue-300 rounded-lg bg-blue-50" role="alert">
                 <div class="flex items-center gap-2 mb-2">
@@ -106,21 +106,24 @@
             </div>
         }
 
-        <!-- Graph Card -->
-        <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div class="p-6">
-                <div class="h-[600px] border border-gray-300 rounded-lg bg-gray-50">
-                    <GraphVisualizer 
+        @if (graphData is not null && graphData?.Nodes?.Count == 1 && graphData.Nodes[0].IsStart)
+        {
+            <!-- Graph Card -->
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="p-6">
+                    <div class="h-[600px] border border-gray-300 rounded-lg bg-gray-50">
+                        <GraphVisualizer 
                         Nodes="@(graphData!.Nodes!)"
                         Edges="@(graphData!.Edges!)"
                         OnNodeSelected="@HandleNodeClick"
                         OnBackgroundClick="@HandleBackgroundClick"
                         OnGraphLoaded="@HandleGraphLoaded" />
+                    </div>
                 </div>
             </div>
-        </div>
+        }
 
-        <!-- Selected Node Info -->
+         <!-- Selected Node Info -->
         @if (selectedNodeId.HasValue && selectedNode is not null)
         {
             <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
@@ -204,6 +207,9 @@
     {
         try
         {
+            // Zainicjalizuj stan użytkownika przed sprawdzeniem
+            await UserStateService.InitializeAsync();
+            
             // Sprawdź czy użytkownik jest zalogowany
             if (UserStateService.CurrentState?.IsAuthenticated != true)
             {

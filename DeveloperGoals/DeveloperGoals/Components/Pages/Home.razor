@@ -1,26 +1,187 @@
 @page "/"
 @using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationStateProvider AuthenticationStateProvider
-@inject NavigationManager Navigation
 
 <PageTitle>DeveloperGoals - Planowanie ścieżki rozwoju</PageTitle>
 
-@code {
-    protected override async Task OnInitializedAsync()
-    {
-        // Sprawdź czy użytkownik jest zalogowany
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+<div class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <!-- Hero Section -->
+    <div class="container mx-auto px-4 py-16">
+        <div class="max-w-4xl mx-auto">
+            <!-- Logo and Title -->
+            <div class="text-center mb-12">
+                <div class="mb-6">
+                    <i class="bi bi-graph-up text-8xl text-primary-600 inline-block animate-pulse"></i>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
+                    DeveloperGoals
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-600 mb-8">
+                    Inteligentna aplikacja do planowania ścieżki rozwoju programistów
+                </p>
+                
+                <!-- CTA Buttons -->
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                            <a href="/dashboard" 
+                               class="inline-flex items-center gap-2 px-12 py-4 text-lg font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-all transform hover:scale-105 shadow-lg">
+                                <i class="bi bi-diagram-3 text-xl"></i>
+                                Przejdź do Dashboard
+                            </a>
+                            <a href="/profile" 
+                               class="inline-flex items-center gap-2 px-8 py-4 text-lg font-medium text-primary-700 bg-white border-2 border-primary-600 rounded-lg hover:bg-primary-50 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-all">
+                                <i class="bi bi-person-fill text-xl"></i>
+                                Mój Profil
+                            </a>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="/login" 
+                           class="inline-flex items-center gap-2 px-12 py-4 text-lg font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-all transform hover:scale-105 shadow-lg">
+                            <i class="bi bi-google text-xl"></i>
+                            Zaloguj się i zacznij
+                        </a>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
 
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            // Jeśli zalogowany, przekieruj do Dashboard
-            Navigation.NavigateTo("/dashboard", false);
-        }
-        else
-        {
-            // Jeśli niezalogowany, przekieruj do logowania
-            Navigation.NavigateTo("/login", false);
-        }
-    }
-}
+            <!-- Features Grid -->
+            <div class="grid md:grid-cols-2 gap-6 mt-16">
+                <!-- Feature 1 -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                                <i class="bi bi-stars text-2xl text-primary-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                Rekomendacje AI
+                            </h3>
+                            <p class="text-gray-600">
+                                Otrzymaj spersonalizowane rekomendacje technologii dopasowane do Twoich celów i poziomu zaawansowania.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="bi bi-diagram-3 text-2xl text-green-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                Wizualizacja Grafu
+                            </h3>
+                            <p class="text-gray-600">
+                                Zobacz swoje technologie jako interaktywny graf z zależnościami i ścieżkami rozwoju.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="bi bi-graph-up-arrow text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                Śledź Postępy
+                            </h3>
+                            <p class="text-gray-600">
+                                Monitoruj swój postęp w nauce każdej technologii i osiągaj wyznaczone cele.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="bg-white border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="bi bi-lightbulb text-2xl text-yellow-600"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                                Inteligentne Planowanie
+                            </h3>
+                            <p class="text-gray-600">
+                                AI pomoże Ci zaplanować optymalną ścieżkę rozwoju dostosowaną do Twoich potrzeb.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works Section -->
+            <div class="bg-white border border-gray-200 rounded-lg shadow-md mt-12 p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center flex items-center justify-center gap-2">
+                    <i class="bi bi-lightbulb text-yellow-500"></i>
+                    Jak to działa?
+                </h2>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                            1
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Zaloguj się</h3>
+                        <p class="text-sm text-gray-600">Szybkie logowanie przez Google OAuth</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                            2
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Wypełnij profil</h3>
+                        <p class="text-sm text-gray-600">Podaj swoje umiejętności i cele (3 minuty)</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                            3
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Otrzymaj rekomendacje</h3>
+                        <p class="text-sm text-gray-600">AI zasugeruje najlepsze technologie dla Ciebie</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
+                            4
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Buduj graf rozwoju</h3>
+                        <p class="text-sm text-gray-600">Śledź postępy i osiągaj cele</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <AuthorizeView>
+                <NotAuthorized>
+                    <div class="text-center mt-12 p-8 bg-primary-50 border border-primary-200 rounded-lg">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-3">
+                            Gotowy na rozwój?
+                        </h3>
+                        <p class="text-gray-700 mb-6">
+                            Dołącz już dziś i zaplanuj swoją ścieżkę kariery z pomocą AI
+                        </p>
+                        <a href="/login" 
+                           class="inline-flex items-center gap-2 px-12 py-4 text-lg font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-all transform hover:scale-105 shadow-lg">
+                            <i class="bi bi-google text-xl"></i>
+                            Rozpocznij teraz
+                        </a>
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</div>
+
+@* No automatic navigation - users click links to navigate *@
