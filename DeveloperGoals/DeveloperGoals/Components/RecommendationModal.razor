@@ -1,0 +1,713 @@
+@using DeveloperGoals.DTOs
+@using DeveloperGoals.Services
+@inject AIRecommendationClientService AIService
+@inject ITechnologyService TechnologyService
+@inject IIgnoredTechnologyService IgnoredTechnologyService
+@inject ILogger<RecommendationModal> Logger
+
+@if (IsVisible)
+{
+    <!-- Modal Overlay -->
+    <div class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4"
+         @onclick="HandleOverlayClick">
+        
+        <!-- Modal Content -->
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+             @onclick:stopPropagation="true">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="bi bi-stars text-primary-600"></i>
+                    Rekomendacje AI
+                </h3>
+                <button type="button" 
+                        @onclick="HandleClose"
+                        disabled="@isProcessing"
+                        class="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50">
+                    <i class="bi bi-x-lg text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b border-gray-200">
+                <nav class="flex -mb-px">
+                    <button type="button"
+                            @onclick="@(() => activeTab = "recommendations")"
+                            class="@GetTabClass("recommendations") py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                        <i class="bi bi-lightbulb-fill mr-2"></i>
+                        Rekomendacje
+                        @if (recommendations.Any())
+                        {
+                            <span class="ml-2 px-2 py-0.5 text-xs bg-primary-100 text-primary-800 rounded-full">@recommendations.Count</span>
+                        }
+                    </button>
+                    <button type="button"
+                            @onclick="@(() => activeTab = "ignored")"
+                            class="@GetTabClass("ignored") py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                        <i class="bi bi-eye-slash-fill mr-2"></i>
+                        Ignorowane
+                        @if (ignoredTechnologies.Any())
+                        {
+                            <span class="ml-2 px-2 py-0.5 text-xs bg-gray-100 text-gray-800 rounded-full">@ignoredTechnologies.Count</span>
+                        }
+                    </button>
+                    <button type="button"
+                            @onclick="@(() => activeTab = "custom")"
+                            class="@GetTabClass("custom") py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                        <i class="bi bi-plus-circle-fill mr-2"></i>
+                        Dodaj własną
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="flex-1 overflow-y-auto p-6">
+                
+                <!-- Tab: Recommendations -->
+                @if (activeTab == "recommendations")
+                {
+                    @if (isLoading)
+                    {
+                        <!-- Loading State -->
+                        <div class="flex flex-col items-center justify-center py-12">
+                            <svg class="animate-spin h-12 w-12 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p class="text-gray-600 text-lg mb-2">Generowanie rekomendacji AI...</p>
+                            <p class="text-gray-500 text-sm">To może potrwać do 20 sekund</p>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <!-- Error State -->
+                        <div class="text-center py-12">
+                            <i class="bi bi-exclamation-triangle text-6xl text-red-500 mb-4 block"></i>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Nie udało się wygenerować rekomendacji</h4>
+                            <p class="text-gray-600 mb-6">@errorMessage</p>
+                            <button type="button"
+                                    @onclick="RetryRecommendations"
+                                    class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors">
+                                <i class="bi bi-arrow-clockwise"></i>
+                                Spróbuj ponownie
+                            </button>
+                        </div>
+                    }
+                    else if (!recommendations.Any())
+                    {
+                        <!-- Empty State -->
+                        <div class="text-center py-12">
+                            <i class="bi bi-inbox text-6xl text-gray-300 mb-4 block"></i>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Brak rekomendacji</h4>
+                            <p class="text-gray-600">Nie znaleziono technologii do zaproponowania.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Recommendations List -->
+                        <div class="space-y-3">
+                            @foreach (var recommendation in recommendations)
+                            {
+                                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors @(recommendation.IsAlreadyInGraph ? "opacity-50" : "")">
+                                    <div class="flex items-start gap-3">
+                                        <input type="checkbox"
+                                               id="@($"rec-{recommendation.TechnologyDefinitionId}")"
+                                               @bind="recommendation.IsSelected"
+                                               disabled="@(recommendation.IsAlreadyInGraph || isProcessing)"
+                                               class="mt-1 w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <label for="@($"rec-{recommendation.TechnologyDefinitionId}")" class="flex-1 cursor-pointer">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <h5 class="font-bold text-gray-900">@recommendation.Name</h5>
+                                                @if (recommendation.IsAlreadyInGraph)
+                                                {
+                                                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Już w grafie</span>
+                                                }
+                                            </div>
+                                            <p class="text-sm text-gray-600 mb-2">
+                                                <span class="font-medium">@recommendation.Prefix</span> • @recommendation.Tag
+                                            </p>
+                                            <p class="text-sm text-gray-700 mb-2">@recommendation.SystemDescription</p>
+                                            <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                                                <p class="text-sm text-blue-900">
+                                                    <i class="bi bi-robot mr-1"></i>
+                                                    <strong>AI:</strong> @recommendation.AiReasoning
+                                                </p>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+
+                <!-- Tab: Ignored -->
+                @if (activeTab == "ignored")
+                {
+                    @if (ignoredTechnologies.Any())
+                    {
+                        <div class="space-y-3">
+                            @foreach (var ignored in ignoredTechnologies)
+                            {
+                                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex-1">
+                                            <h5 class="font-bold text-gray-900 mb-1">@ignored.Name</h5>
+                                            <p class="text-sm text-gray-600 mb-2">
+                                                <span class="font-medium">@ignored.Category</span> • @ignored.Tag
+                                            </p>
+                                            <p class="text-sm text-gray-700">@ignored.SystemDescription</p>
+                                            @if (!string.IsNullOrEmpty(ignored.AiReasoning))
+                                            {
+                                                <div class="mt-2 bg-gray-100 p-2 rounded text-xs text-gray-600">
+                                                    <i class="bi bi-robot mr-1"></i>
+                                                    @ignored.AiReasoning
+                                                </div>
+                                            }
+                                        </div>
+                                        <button type="button"
+                                                @onclick="@(() => RestoreIgnored(ignored.Id))"
+                                                disabled="@isProcessing"
+                                                class="px-3 py-1.5 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-2 focus:outline-none focus:ring-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                            Przywróć
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-12">
+                            <i class="bi bi-inbox text-6xl text-gray-300 mb-4 block"></i>
+                            <h4 class="text-xl font-bold text-gray-900 mb-2">Brak ignorowanych technologii</h4>
+                            <p class="text-gray-600">Nie zignorowałeś jeszcze żadnych rekomendacji.</p>
+                        </div>
+                    }
+                }
+
+                <!-- Tab: Custom -->
+                @if (activeTab == "custom")
+                {
+                    <div class="max-w-2xl mx-auto">
+                        <div class="mb-4">
+                            <label for="customName" class="block text-sm font-medium text-gray-700 mb-2">Nazwa technologii *</label>
+                            <input type="text"
+                                   id="customName"
+                                   @bind="customTechName"
+                                   placeholder="np. Rust"
+                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="customPrefix" class="block text-sm font-medium text-gray-700 mb-2">Kategoria *</label>
+                            <input type="text"
+                                   id="customPrefix"
+                                   @bind="customTechPrefix"
+                                   placeholder="np. Programming Language"
+                                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="customTag" class="block text-sm font-medium text-gray-700 mb-2">Tag *</label>
+                            <select id="customTag"
+                                    @bind="customTechTag"
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">Wybierz tag...</option>
+                                <option value="Language">Language</option>
+                                <option value="Framework">Framework</option>
+                                <option value="Library">Library</option>
+                                <option value="Database">Database</option>
+                                <option value="Tool">Tool</option>
+                                <option value="Platform">Platform</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="customDescription" class="block text-sm font-medium text-gray-700 mb-2">Opis *</label>
+                            <textarea id="customDescription"
+                                      @bind="customTechDescription"
+                                      rows="3"
+                                      placeholder="Krótki opis technologii..."
+                                      class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"></textarea>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(customErrorMessage))
+                        {
+                            <div class="mb-4 p-3 text-red-800 border border-red-300 rounded-lg bg-red-50 text-sm">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                @customErrorMessage
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex flex-col sm:flex-row gap-3 p-6 border-t border-gray-200 bg-gray-50">
+                @if (activeTab == "recommendations")
+                {
+                    @if (recommendations.Any(r => !r.IsAlreadyInGraph))
+                    {
+                        <button type="button"
+                                @onclick="IgnoreSelected"
+                                disabled="@(!CanIgnore() || isProcessing)"
+                                class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <i class="bi bi-eye-slash"></i>
+                            Ignoruj zaznaczone
+                        </button>
+                    }
+                    <div class="flex-1"></div>
+                    @if (recommendations.Any(r => !r.IsAlreadyInGraph))
+                    {
+                        <button type="button"
+                                @onclick="AddSelectedToGraph"
+                                disabled="@(!CanAddToGraph() || isProcessing)"
+                                class="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            @if (isProcessing)
+                            {
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Dodawanie...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-plus-circle"></i>
+                                <span>Dodaj do grafu (@GetSelectedCount())</span>
+                            }
+                        </button>
+                    }
+                }
+                else if (activeTab == "custom")
+                {
+                    <div class="flex-1"></div>
+                    <button type="button"
+                            @onclick="AddCustomTechnology"
+                            disabled="@(!CanAddCustom() || isProcessing)"
+                            class="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        @if (isProcessing)
+                        {
+                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Dodawanie...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-plus-circle"></i>
+                            <span>Dodaj technologię</span>
+                        }
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public int SourceNodeId { get; set; }
+
+    [Parameter]
+    public List<int> ContextTechnologyIds { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnTechnologiesAdded { get; set; }
+
+    private string activeTab = "recommendations";
+    private bool isLoading = false;
+    private bool isProcessing = false;
+    private string? errorMessage;
+    private string? customErrorMessage;
+
+    private List<SelectableRecommendation> recommendations = new();
+    
+    // Wrapper dla RecommendationDto z możliwością zaznaczania
+    private class SelectableRecommendation
+    {
+        public int TechnologyDefinitionId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Prefix { get; set; } = string.Empty;
+        public string Tag { get; set; } = string.Empty;
+        public string SystemDescription { get; set; } = string.Empty;
+        public string AiReasoning { get; set; } = string.Empty;
+        public bool IsAlreadyInGraph { get; set; }
+        public bool IsSelected { get; set; }
+
+        public static SelectableRecommendation FromDto(RecommendationDto dto)
+        {
+            return new SelectableRecommendation
+            {
+                TechnologyDefinitionId = dto.TechnologyDefinitionId,
+                Name = dto.Name,
+                Prefix = dto.Prefix,
+                Tag = dto.Tag,
+                SystemDescription = dto.SystemDescription,
+                AiReasoning = dto.AiReasoning,
+                IsAlreadyInGraph = dto.IsAlreadyInGraph,
+                IsSelected = false
+            };
+        }
+    }
+    private List<IgnoredTechnologyDto> ignoredTechnologies = new();
+
+    // Custom technology fields
+    private string customTechName = string.Empty;
+    private string customTechPrefix = string.Empty;
+    private string customTechTag = string.Empty;
+    private string customTechDescription = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && SourceNodeId > 0)
+        {
+            await LoadRecommendations();
+            await LoadIgnoredTechnologies();
+        }
+    }
+
+    private string GetTabClass(string tabName)
+    {
+        return activeTab == tabName
+            ? "text-primary-600 border-primary-600"
+            : "text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300";
+    }
+
+    private bool CanAddToGraph() => recommendations.Any(r => r.IsSelected && !r.IsAlreadyInGraph);
+    private bool CanIgnore() => recommendations.Any(r => r.IsSelected && !r.IsAlreadyInGraph);
+    private int GetSelectedCount() => recommendations.Count(r => r.IsSelected && !r.IsAlreadyInGraph);
+    
+    private bool CanAddCustom() => 
+        !string.IsNullOrWhiteSpace(customTechName) &&
+        !string.IsNullOrWhiteSpace(customTechPrefix) &&
+        !string.IsNullOrWhiteSpace(customTechTag) &&
+        !string.IsNullOrWhiteSpace(customTechDescription);
+
+    private async Task LoadRecommendations()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            recommendations.Clear();
+            StateHasChanged();
+
+            Logger.LogInformation("Pobieranie rekomendacji AI dla węzła {NodeId}", SourceNodeId);
+
+            var command = new GenerateRecommendationsCommand
+            {
+                FromTechnologyId = SourceNodeId,
+                ContextTechnologyIds = ContextTechnologyIds
+            };
+
+            var result = await AIService.GetRecommendationsAsync(command);
+
+            if (result is not null)
+            {
+                recommendations = result.Recommendations
+                    .Select(SelectableRecommendation.FromDto)
+                    .ToList();
+                Logger.LogInformation("Pobrano {Count} rekomendacji", recommendations.Count);
+            }
+            else
+            {
+                errorMessage = "Nie udało się pobrać rekomendacji.";
+                Logger.LogWarning("GetRecommendationsAsync zwróciło null");
+            }
+        }
+        catch (TimeoutException)
+        {
+            errorMessage = "Przekroczono limit czasu oczekiwania na odpowiedź AI (20s).";
+            Logger.LogWarning("Timeout podczas pobierania rekomendacji");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Wystąpił błąd podczas generowania rekomendacji.";
+            Logger.LogError(ex, "Błąd podczas pobierania rekomendacji AI");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadIgnoredTechnologies()
+    {
+        try
+        {
+            Logger.LogInformation("Pobieranie listy ignorowanych technologii");
+            
+            var result = await IgnoredTechnologyService.GetIgnoredAsync(limit: 100);
+
+            if (result is not null)
+            {
+                ignoredTechnologies = result.IgnoredTechnologies;
+                Logger.LogInformation("Pobrano {Count} ignorowanych technologii", ignoredTechnologies.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Błąd podczas pobierania ignorowanych technologii");
+        }
+    }
+
+    private async Task AddSelectedToGraph()
+    {
+        var selectedRecs = recommendations
+            .Where(r => r.IsSelected && !r.IsAlreadyInGraph)
+            .ToList();
+
+        if (!selectedRecs.Any())
+            return;
+
+        try
+        {
+            isProcessing = true;
+            errorMessage = null;
+            StateHasChanged();
+
+            Logger.LogInformation("Dodawanie {Count} technologii do grafu", selectedRecs.Count);
+
+            var command = new BatchAddTechnologiesCommand
+            {
+                FromTechnologyId = SourceNodeId,
+                Technologies = selectedRecs.Select(r => new BatchTechnologyItem
+                {
+                    TechnologyDefinitionId = r.TechnologyDefinitionId,
+                    PrivateDescription = null
+                }).ToList()
+            };
+
+            var response = await TechnologyService.AddTechnologiesBatchAsync(command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Logger.LogInformation("Pomyślnie dodano technologie do grafu");
+                
+                // Powiadom rodzica o dodaniu technologii
+                await OnTechnologiesAdded.InvokeAsync();
+                
+                // Zamknij modal
+                await HandleClose();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.MultiStatus)
+            {
+                // Częściowy sukces (207) - niektóre się udały
+                var multiStatus = await response.Content.ReadFromJsonAsync<BatchAddMultiStatusResponseDto>();
+                Logger.LogWarning("Częściowy sukces: {Success}/{Total}", 
+                    multiStatus?.SuccessCount ?? 0, selectedRecs.Count);
+                
+                errorMessage = $"Dodano {multiStatus?.SuccessCount ?? 0} z {selectedRecs.Count} technologii.";
+                
+                // Odśwież rekomendacje
+                await LoadRecommendations();
+            }
+            else
+            {
+                errorMessage = "Nie udało się dodać technologii do grafu.";
+                Logger.LogWarning("Błąd podczas dodawania technologii: {StatusCode}", response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Wystąpił błąd podczas dodawania technologii.";
+            Logger.LogError(ex, "Błąd podczas dodawania technologii do grafu");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task IgnoreSelected()
+    {
+        var selectedRecs = recommendations
+            .Where(r => r.IsSelected && !r.IsAlreadyInGraph)
+            .ToList();
+
+        if (!selectedRecs.Any())
+            return;
+
+        try
+        {
+            isProcessing = true;
+            errorMessage = null;
+            StateHasChanged();
+
+            Logger.LogInformation("Dodawanie {Count} technologii do listy ignorowanych", selectedRecs.Count);
+
+            var command = new AddIgnoredTechnologyCommand
+            {
+                Technologies = selectedRecs.Select(r => new IgnoreTechnologyItem
+                {
+                    Name = r.Name,
+                    Category = r.Prefix,
+                    Tag = r.Tag,
+                    SystemDescription = r.SystemDescription,
+                    AiReasoning = r.AiReasoning,
+                    ContextTechnologyId = SourceNodeId
+                }).ToList()
+            };
+
+            var result = await IgnoredTechnologyService.AddIgnoredAsync(command);
+
+            if (result is not null)
+            {
+                Logger.LogInformation("Dodano {Count} technologii do ignorowanych", result.Count);
+                
+                // Usuń zaznaczone z listy rekomendacji
+                foreach (var rec in selectedRecs)
+                {
+                    recommendations.Remove(rec);
+                }
+
+                // Odśwież listę ignorowanych
+                await LoadIgnoredTechnologies();
+                
+                // Przełącz na zakładkę ignorowanych
+                activeTab = "ignored";
+            }
+            else
+            {
+                errorMessage = "Nie udało się dodać do listy ignorowanych.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Wystąpił błąd podczas dodawania do ignorowanych.";
+            Logger.LogError(ex, "Błąd podczas dodawania do ignorowanych");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddCustomTechnology()
+    {
+        if (!CanAddCustom())
+            return;
+
+        try
+        {
+            isProcessing = true;
+            customErrorMessage = null;
+            StateHasChanged();
+
+            Logger.LogInformation("Dodawanie własnej technologii: {Name}", customTechName);
+
+            var command = new CreateCustomTechnologyCommand
+            {
+                Name = customTechName.Trim(),
+                Prefix = customTechPrefix.Trim(),
+                Tag = customTechTag,
+                SystemDescription = customTechDescription.Trim(),
+                FromTechnologyId = SourceNodeId,
+                PrivateDescription = null
+            };
+
+            var result = await TechnologyService.CreateCustomTechnologyAsync(command);
+
+            if (result is not null)
+            {
+                Logger.LogInformation("Pomyślnie dodano własną technologię");
+                
+                // Wyczyść formularz
+                customTechName = string.Empty;
+                customTechPrefix = string.Empty;
+                customTechTag = string.Empty;
+                customTechDescription = string.Empty;
+                
+                // Powiadom rodzica
+                await OnTechnologiesAdded.InvokeAsync();
+                
+                // Zamknij modal
+                await HandleClose();
+            }
+            else
+            {
+                customErrorMessage = "Nie udało się dodać technologii.";
+            }
+        }
+        catch (Exception ex)
+        {
+            customErrorMessage = "Wystąpił błąd podczas dodawania technologii.";
+            Logger.LogError(ex, "Błąd podczas dodawania własnej technologii");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RestoreIgnored(int id)
+    {
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+
+            Logger.LogInformation("Przywracanie ignorowanej technologii {Id}", id);
+
+            var result = await IgnoredTechnologyService.RestoreIgnoredAsync(id);
+
+            if (result is not null)
+            {
+                Logger.LogInformation("Przywrócono technologię z listy ignorowanych");
+                
+                // Usuń z lokalnej listy
+                var removed = ignoredTechnologies.FirstOrDefault(i => i.Id == id);
+                if (removed is not null)
+                {
+                    ignoredTechnologies.Remove(removed);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Błąd podczas przywracania ignorowanej technologii {Id}", id);
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryRecommendations()
+    {
+        Logger.LogInformation("Ponowna próba wygenerowania rekomendacji");
+        await LoadRecommendations();
+    }
+
+    private async Task HandleClose()
+    {
+        if (!isProcessing)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private void HandleOverlayClick()
+    {
+        if (!isProcessing && !isLoading)
+        {
+            _ = HandleClose();
+        }
+    }
+}
