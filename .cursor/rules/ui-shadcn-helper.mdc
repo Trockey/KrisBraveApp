@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description: Guidelines for using shadcn/ui components in the project. Apply when working with UI components, importing shadcn components, or installing new shadcn components.
+globs: *.tsx, *.ts, *.astro
 alwaysApply: false
 ---
+
 # Shadcn UI Components
 
 Ten projekt wykorzystuje @shadcn/ui dla komponentów interfejsu użytkownika. Są to pięknie zaprojektowane, dostępne komponenty, które można dostosować do swojej aplikacji.

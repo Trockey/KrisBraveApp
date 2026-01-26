@@ -1,0 +1,61 @@
+---
+description: Wytyczne dotyczące pisania testów E2E z użyciem Playwright for .NET. Zastosuj tę regułę podczas tworzenia, modyfikowania lub debugowania testów end-to-end z Playwright dla aplikacji Blazor Server (.NET 9).
+globs:
+  - "**/*.spec.cs"
+  - "**/*.test.cs"
+  - "**/Tests/**/*.cs"
+  - "**/E2E/**/*.cs"
+  - "**/e2e/**/*.cs"
+  - "PlaywrightSettings.cs"
+  - "playwright.config.json"
+alwaysApply: false
+---
+
+## TESTING
+
+### Guidelines for E2E
+
+#### PLAYWRIGHT FOR .NET (Blazor Server)
+
+**Konfiguracja i Setup:**
+- Używaj Playwright for .NET (Microsoft.Playwright.NUnit lub Microsoft.Playwright.xUnit)
+- Inicjalizuj konfigurację tylko z przeglądarką Chromium/Desktop Chrome
+- Użyj `PlaywrightSettings.cs` lub `playwright.config.json` do konfiguracji
+- Zainstaluj przeglądarki przez `pwsh bin/Debug/net9.0/playwright.ps1 install`
+
+**Izolacja i zarządzanie testami:**
+- Używaj browser contexts do izolacji środowisk testowych
+- Implementuj Page Object Model dla utrzymywalnych testów (klasy C# z metodami)
+- Używaj `[SetUp]` i `[TearDown]` (NUnit) lub konstruktorów (xUnit) do setup/teardown
+- Wykorzystuj parallel execution dla szybszych przebiegów testów
+
+**Selekcja elementów:**
+- Używaj locators (`page.Locator()`) dla odpornej selekcji elementów
+- Preferuj selektory oparte na roli i tekst (`GetByRole()`, `GetByText()`)
+- Unikaj selektorów CSS/XPath, które są kruche przy zmianach UI
+- Czekaj na elementy przed interakcją (`WaitForAsync()`)
+
+**Specyfika Blazor Server:**
+- Uwzględniaj opóźnienia SignalR - dodawaj odpowiednie oczekiwania na aktualizacje komponentów
+- Testuj interakcje z komponentami Blazor (kliknięcia, formularze, nawigacja)
+- Sprawdzaj aktualizacje UI po operacjach server-side
+- Testuj JS Interop (np. integrację z vis.js) używając `page.EvaluateAsync()`
+
+**Asercje i walidacja:**
+- Używaj asercji z `Expect()` z konkretnymi matcher'ami
+- Implementuj visual comparison z `await Expect(page).ToHaveScreenshotAsync()`
+- Wykorzystuj API testing dla walidacji backendu (HttpClient w testach)
+- Testuj autentykację Google OAuth (mock lub testowe konto)
+
+**Debugowanie i narzędzia:**
+- Wykorzystuj trace viewer do debugowania nieudanych testów (`--trace on`)
+- Używaj codegen tool do nagrywania testów (`pwsh bin/Debug/net9.0/playwright.ps1 codegen`)
+- Implementuj screenshoty przy błędach (`page.ScreenshotAsync()` w catch)
+- Używaj `page.PauseAsync()` do interaktywnego debugowania
+
+**Best Practices:**
+- Grupuj powiązane testy w klasy testowe
+- Używaj test fixtures dla wspólnego setup'u (baza danych, autentykacja)
+- Implementuj retry logic dla niestabilnych testów
+- Utrzymuj testy niezależne - każdy test powinien móc działać samodzielnie
+- Używaj test data builders dla tworzenia danych testowych
