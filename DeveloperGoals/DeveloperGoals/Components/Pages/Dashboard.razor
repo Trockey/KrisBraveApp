@@ -106,11 +106,14 @@
             </div>
         }
 
-        @if (graphData is not null && graphData?.Nodes?.Count == 1 && graphData.Nodes[0].IsStart)
+        @if (graphData is not null && graphData?.Nodes?.Count >= 1 && graphData.Nodes[0].IsStart)
         {
             <!-- Graph Card -->
             <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
                 <div class="p-6">
+                    @{
+                        Console.WriteLine("Tu jestem");
+                    }
                     <div class="h-[600px] border border-gray-300 rounded-lg bg-gray-50">
                         <GraphVisualizer 
                         Nodes="@(graphData!.Nodes!)"
@@ -246,6 +249,23 @@
 
             graphData = await TechnologyService.GetGraphAsync();
 
+            // Sortuj węzły tak, aby węzły z IsStart = True były pierwsze
+            if (graphData is not null && graphData.Nodes is not null)
+            {
+                graphData.Nodes = graphData.Nodes
+                    .Where(n => n is not null)
+                    .OrderByDescending(n => n.IsStart)
+                    .ToList();
+            }
+
+            // Usuń krawędzie które są null
+            if (graphData is not null && graphData.Edges is not null)
+            {
+                graphData.Edges = graphData.Edges
+                    .Where(e => e is not null)
+                    .ToList();
+            }
+
             if (graphData is null)
             {
                 errorMessage = "Nie udało się pobrać danych grafu.";
@@ -254,7 +274,7 @@
             else
             {
                 Logger.LogInformation("Załadowano graf: {NodeCount} węzłów, {EdgeCount} krawędzi", 
-                    graphData.Nodes.Count, graphData.Edges.Count);
+                    graphData.Nodes?.Count ?? 0, graphData.Edges?.Count ?? 0);
             }
         }
         catch (Exception ex)

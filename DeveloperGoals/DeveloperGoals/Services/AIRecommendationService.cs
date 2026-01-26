@@ -152,7 +152,7 @@ public class AIRecommendationService : IAIRecommendationService
             throw new TechnologyNotFoundException("Source technology not found");
         }
 
-        if (technology.UserId != userId)
+        if (technology.UserId != userId) 
         {
             throw new TechnologyNotOwnedException("Technology does not belong to user");
         }

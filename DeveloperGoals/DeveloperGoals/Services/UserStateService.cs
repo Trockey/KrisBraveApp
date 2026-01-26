@@ -39,7 +39,7 @@ public class UserStateService : IUserStateService
                     IsAuthenticated = true,
                     Email = user.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty,
                     Name = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty,
-                    UserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : 0,
+                    GoogleId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value,
                     HasProfile = false // Będzie aktualizowane po sprawdzeniu API
                 };
 

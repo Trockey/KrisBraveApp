@@ -225,9 +225,21 @@ public class TechnologyController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> AddTechnologiesBatch([FromBody] BatchAddTechnologiesCommand command, [FromQuery] string? email = null)
     {
-        var (flowControl, value, userId) = await GetUserId(email);
-        if (!flowControl)
-            return value;
+        BigInteger? userId = BigInteger.Parse(command.GoogleId);
+        if(userId == null)
+        {
+            _logger.LogError("Google ID is required at method AddTechnologiesBatch: {GoogleId}", command.GoogleId);
+
+            return BadRequest(new ErrorResponseDto
+            {
+                Error = "BadRequest",
+                Message = "User ID is required at method AddTechnologiesBatch"
+            });
+        }
+
+        // var (flowControl, value, userId2) = await GetUserId(email);
+        // if (!flowControl)
+        //     return value;
 
         if (command.Technologies == null || !command.Technologies.Any())
         {
@@ -238,11 +250,22 @@ public class TechnologyController : ControllerBase
             });
         }
 
+        var user = await _context.Users.FirstOrDefaultAsync(t => t.GoogleId == command.GoogleId);
+        if(user == null)
+        {
+            _logger.LogError("User not found at method AddTechnologiesBatch: {GoogleId}", command.GoogleId);
+            return BadRequest(new ErrorResponseDto
+            {
+                Error = "BadRequest",
+                Message = "User not found at method AddTechnologiesBatch"
+            });
+        }
+
         // Sprawdź czy FromTechnologyId istnieje
         if (command.FromTechnologyId > 0)
         {
             var fromTech = await _context.UserTechnologies
-                .FirstOrDefaultAsync(t => t.Id == command.FromTechnologyId && t.UserId == userId.Value);
+                .FirstOrDefaultAsync(t => t.Id == command.FromTechnologyId && t.UserId == user.Id);
 
             if (fromTech == null)
             {
@@ -283,28 +306,45 @@ public class TechnologyController : ControllerBase
                 var definition = await _context.TechnologyDefinitions
                     .FirstOrDefaultAsync(td => td.Id == item.TechnologyDefinitionId);
 
-                if (definition == null)
+                // TODO:
+                // if (definition == null)
+                // {
+                //     statusResults.Add(new BatchStatusResult
+                //     {
+                //         TechnologyDefinitionId = item.TechnologyDefinitionId,
+                //         Status = "NotFound",
+                //         Error = "Technology definition not found"
+                //     });
+                //     errorCount++;
+                //     continue;
+                // }
+
+
+                var technologyDefinition = new TechnologyDefinition
                 {
-                    statusResults.Add(new BatchStatusResult
-                    {
-                        TechnologyDefinitionId = item.TechnologyDefinitionId,
-                        Status = "NotFound",
-                        Error = "Technology definition not found"
-                    });
-                    errorCount++;
-                    continue;
-                }
+                    Name = item.SystemDescription,
+                    // Prefix = item.Prefix,
+                    // Tag = item.Tag,
+                    SystemDescription = item.AiReasoning,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.TechnologyDefinitions.Add(technologyDefinition);
+                await _context.SaveChangesAsync();
+
+                definition = technologyDefinition;
 
                 // Utwórz technologię
                 var technology = new UserTechnology
                 {
-                    UserId = userId.Value,
+                    UserId = new BigInteger((decimal)user.Id),
                     TechnologyDefinitionId = definition.Id,
                     Name = definition.Name,
                     Prefix = definition.Prefix,
                     Category = definition.Prefix,
                     Tag = definition.Tag,
                     SystemDescription = definition.SystemDescription,
+                    AiReasoning = item.AiReasoning ?? string.Empty,
                     PrivateDescription = item.PrivateDescription,
                     Status = TechnologyStatus.Active,
                     Progress = 0,
@@ -319,7 +359,7 @@ public class TechnologyController : ControllerBase
                 // Utwórz zależność
                 var dependency = new TechnologyDependency
                 {
-                    UserId = userId.Value,
+                    UserId = new BigInteger((decimal)user.Id),
                     FromTechnologyId = command.FromTechnologyId > 0 ? command.FromTechnologyId : null,
                     ToTechnologyId = technology.Id,
                     CreatedAt = DateTime.UtcNow

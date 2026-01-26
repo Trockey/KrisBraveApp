@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using DeveloperGoals.DTOs;
 
 namespace DeveloperGoals.Services;
@@ -34,10 +35,38 @@ public class AIRecommendationClientService
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("Nie udało się pobrać rekomendacji. Status: {StatusCode}", response.StatusCode);
+                
+                // Odczytaj zawartość błędu dla debugowania
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Zawartość odpowiedzi błędu: {ErrorContent}", errorContent);
+                
                 return null;
             }
 
-            return await response.Content.ReadFromJsonAsync<RecommendationsResponseDto>();
+            // return await response.Content.ReadFromJsonAsync<RecommendationsResponseDto>();
+
+            // Sprawdź content type
+            var contentType = response.Content.Headers.ContentType?.MediaType;
+            _logger.LogInformation("Content-Type odpowiedzi: {ContentType}", contentType);
+
+            // Odczytaj surową zawartość przed parsowaniem
+            var rawContent = await response.Content.ReadAsStringAsync();
+            _logger.LogInformation("Surowa zawartość odpowiedzi (pierwsze 500 znaków): {RawContent}", 
+                rawContent.Length > 500 ? rawContent.Substring(0, 500) + "..." : rawContent);
+
+            // Spróbuj sparsować JSON z odczytanego stringa
+            try
+            {
+                return JsonSerializer.Deserialize<RecommendationsResponseDto>(rawContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch (JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Błąd parsowania JSON. Pełna zawartość odpowiedzi: {FullContent}", rawContent);
+                throw;
+            }
         }
         catch (Exception ex)
         {

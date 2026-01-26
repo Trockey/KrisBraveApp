@@ -3,6 +3,7 @@
 @inject AIRecommendationClientService AIService
 @inject ITechnologyService TechnologyService
 @inject IIgnoredTechnologyService IgnoredTechnologyService
+@inject IUserStateService UserStateService
 @inject ILogger<RecommendationModal> Logger
 
 @if (IsVisible)
@@ -408,7 +409,8 @@
             var command = new GenerateRecommendationsCommand
             {
                 FromTechnologyId = SourceNodeId,
-                ContextTechnologyIds = ContextTechnologyIds
+                ContextTechnologyIds = ContextTechnologyIds,
+                GoogleId = UserStateService.CurrentState?.GoogleId
             };
 
             var result = await AIService.GetRecommendationsAsync(command);
@@ -486,8 +488,11 @@
                 Technologies = selectedRecs.Select(r => new BatchTechnologyItem
                 {
                     TechnologyDefinitionId = r.TechnologyDefinitionId,
-                    PrivateDescription = null
-                }).ToList()
+                    PrivateDescription = null,
+                    SystemDescription = r.SystemDescription,
+                    AiReasoning = r.AiReasoning
+                }).ToList(),
+                GoogleId = UserStateService.CurrentState?.GoogleId
             };
 
             var response = await TechnologyService.AddTechnologiesBatchAsync(command);
