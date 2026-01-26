@@ -97,6 +97,14 @@ public class Program
 
         // AI Services
         builder.Services.AddScoped<IAIRecommendationService, AIRecommendationService>();
+        builder.Services.AddScoped<AIRecommendationClientService>();
+
+        // Technology Services
+        builder.Services.AddScoped<ITechnologyService, TechnologyService>();
+        builder.Services.AddScoped<IIgnoredTechnologyService, IgnoredTechnologyService>();
+
+        // User State Service
+        builder.Services.AddScoped<IUserStateService, UserStateService>();
 
         // Exception Handler
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using DeveloperGoals.Models;
 
 namespace DeveloperGoals.DTOs;
@@ -163,6 +163,8 @@ public class BatchTechnologyItem
 {
     public int TechnologyDefinitionId { get; set; }
     public string? PrivateDescription { get; set; }
+    public string? SystemDescription { get; set; }
+    public string? AiReasoning { get; set; }
 }
 
 /// <summary>
@@ -172,6 +174,8 @@ public class BatchAddTechnologiesCommand
 {
     public int FromTechnologyId { get; set; }
     public List<BatchTechnologyItem> Technologies { get; set; } = new();
+    public string? GoogleId { get; set; }
+    
 }
 
 /// <summary>
@@ -367,6 +371,7 @@ public class GenerateRecommendationsCommand
 {
     public int FromTechnologyId { get; set; }
     public List<int>? ContextTechnologyIds { get; set; }
+    public string? GoogleId { get; set; }
 }
 
 /// <summary>

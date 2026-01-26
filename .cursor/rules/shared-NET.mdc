@@ -1,0 +1,67 @@
+---
+alwaysApply: false
+---
+# AI Rules for DeveloperGoals
+
+Aplikacja do planowania ścieżki rozwoju programistów z wykorzystaniem AI.
+
+## Tech Stack
+
+- .NET 9.0
+- Blazor Web App (Interactive Auto - Server + WebAssembly)
+- Entity Framework Core 9.0
+- PostgreSQL
+- Google OAuth 2.0
+- Tailwind CSS 3.4
+- Flowbite 2.2
+- Bootstrap Icons 1.11
+
+## Project Structure
+
+When introducing changes to the project, always follow the directory structure below:
+
+- `./DeveloperGoals` - Server project (ASP.NET Core)
+  - `./DeveloperGoals/Components` - Blazor components (Razor components)
+    - `./Components/Pages` - Page components (routes)
+    - `./Components/Layout` - Layout components
+  - `./DeveloperGoals/Controllers` - API controllers (REST endpoints)
+  - `./DeveloperGoals/Services` - Business logic services and interfaces
+  - `./DeveloperGoals/Models` - Entity models (EF Core entities)
+  - `./DeveloperGoals/Data` - Database context and data access
+  - `./DeveloperGoals/DTOs` - Data Transfer Objects for API
+  - `./DeveloperGoals/Migrations` - Entity Framework migrations
+  - `./DeveloperGoals/Configuration` - Configuration classes and options
+  - `./DeveloperGoals/Middleware` - Custom middleware
+  - `./DeveloperGoals/Exceptions` - Custom exception types
+  - `./DeveloperGoals/wwwroot` - Static files (CSS, JS, images)
+  - `./DeveloperGoals/Styles` - CSS files
+- `./DeveloperGoals.Client` - Client project (Blazor WebAssembly)
+  - `./Pages` - Client-side Blazor pages
+  - `./wwwroot` - Static assets for client
+
+When modifying the directory structure, always update this section.
+
+## Coding practices
+
+### Guidelines for clean code
+
+- Use feedback from analyzers and linters (Roslyn analyzers) to improve the code when making changes.
+- Prioritize error handling and edge cases using try-catch blocks and proper exception handling.
+- Handle errors and edge cases at the beginning of methods using guard clauses.
+- Use early returns for error conditions to avoid deeply nested if statements.
+- Place the happy path last in the method for improved readability.
+- Avoid unnecessary else statements; use if-return pattern instead.
+- Use guard clauses to handle preconditions and invalid states early (e.g., `if (value is null) throw new ArgumentNullException(nameof(value))`).
+- Implement proper error logging using ILogger and user-friendly error messages.
+- Consider using custom exception types or exception factories for consistent error handling.
+- Always use async/await for I/O operations (database, HTTP calls, file operations).
+- Use dependency injection for all services - register services in Program.cs with appropriate lifetimes (Scoped, Singleton, Transient).
+- Prefer using nullable reference types and handle nullability explicitly.
+- Use LINQ for data queries but be aware of performance implications (avoid N+1 queries).
+- Apply SOLID principles, especially Single Responsibility and Dependency Inversion.
+- Use records for immutable DTOs and value objects when appropriate.
+- Prefer expression-bodied members for simple properties and methods.
+- Use pattern matching (switch expressions, is patterns) for cleaner conditional logic.
+- Implement proper disposal pattern (IDisposable/IAsyncDisposable) for resources that need cleanup.
+- Use configuration options pattern (IOptions<T>) for strongly-typed configuration.
+- Apply proper validation using Data Annotations or FluentValidation for models and DTOs.

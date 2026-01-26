@@ -13,7 +13,6 @@ namespace DeveloperGoals.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/ai")]
-// TODO: Włączyć autoryzację po dodaniu uwierzytelniania ??
 // [Authorize]
 public class AIRecommendationsController : ControllerBase
 {
@@ -51,10 +50,10 @@ public class AIRecommendationsController : ControllerBase
         [FromBody] GenerateRecommendationsCommandWithValidation command,
         CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? googleId = command.GoogleId;
       
         BigInteger googleUserId;
-        if (string.IsNullOrEmpty(userIdClaim) || !BigInteger.TryParse(userIdClaim, out googleUserId))
+        if (string.IsNullOrEmpty(googleId) || !BigInteger.TryParse(googleId, out googleUserId))
         {
             _logger.LogWarning("User ID not found in claims");
             return Unauthorized(new ErrorResponseDto
@@ -98,4 +97,9 @@ public class GenerateRecommendationsCommandWithValidation
     /// </summary>
     [MaxLength(50, ErrorMessage = "Maximum 50 context technologies allowed")]
     public List<int>? ContextTechnologyIds { get; set; }
+
+    /// <summary>
+    /// ID użytkownika z claims
+    /// </summary>
+    public string? GoogleId { get; set; }
 }

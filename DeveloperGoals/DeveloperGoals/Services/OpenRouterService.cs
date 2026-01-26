@@ -154,7 +154,7 @@ public class OpenRouterService : IOpenRouterService
 Your task is to recommend the next technologies to learn based on the user's profile and current technology.
 
 IMPORTANT RULES:
-1. Return EXACTLY 10 recommendations
+1. Return EXACTLY 3 recommendations
 2. Recommendations should be logical next steps in the learning path
 3. Consider the user's role, development area, and main technologies
 4. Each recommendation must include: name, prefix, tag, systemDescription, and aiReasoning
@@ -177,7 +177,7 @@ IMPORTANT RULES:
                 $"- {t.Name} ({t.Prefix}): {t.SystemDescription}"))
             : "None";
 
-        var prompt1 = $@"Generate 10 technology recommendations for the following context:
+        var prompt1 = $@"Generate 3 technology recommendations for the following context:
 
 USER PROFILE:
 - Role: {profile.Role}

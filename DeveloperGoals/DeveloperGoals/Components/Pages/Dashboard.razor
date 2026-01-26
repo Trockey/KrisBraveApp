@@ -1,0 +1,382 @@
+@page "/dashboard"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using DeveloperGoals.DTOs
+@using DeveloperGoals.Services
+@using Microsoft.AspNetCore.Authorization
+@inject ITechnologyService TechnologyService
+@inject IUserStateService UserStateService
+@inject ILogger<Dashboard> Logger
+@inject NavigationManager Navigation
+
+<PageTitle>Dashboard - Graf Technologii</PageTitle>
+
+<div class="max-w-7xl mx-auto">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+            <i class="bi bi-diagram-3 text-primary-600"></i>
+            Mój Graf Technologii
+        </h1>
+
+        @if (graphData is not null && graphData.Nodes.Any())
+        {
+            <div class="flex items-center gap-4">
+                <div class="text-sm text-gray-600">
+                    <span class="font-semibold">@graphData.Stats.TotalNodes</span> technologii
+                    • <span class="font-semibold">@graphData.Stats.AverageProgress%</span> średni postęp
+                </div>
+                <button type="button" 
+                        @onclick="RefreshGraph"
+                        class="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Odśwież
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- Loading State -->
+    @if (isLoading)
+    {
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-12">
+            <div class="flex flex-col items-center justify-center">
+                <svg class="animate-spin h-12 w-12 text-primary-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-600">Ładowanie grafu technologii...</p>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage ))
+    {
+        <!-- Error State -->
+        <div class="p-4 mb-6 text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+            <div class="flex items-start gap-3">
+                <i class="bi bi-exclamation-triangle text-xl mt-0.5"></i>
+                <div class="flex-1">
+                    <h3 class="text-lg font-medium mb-1">Wystąpił błąd</h3>
+                    <p class="text-sm mb-3">@errorMessage</p>
+                    <button type="button" 
+                            @onclick="RefreshGraph"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-700 rounded-lg hover:bg-red-50 focus:ring-4 focus:outline-none focus:ring-red-300 transition-colors">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Spróbuj ponownie
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else if (graphData is null || graphData.Nodes is null || !graphData.Nodes.Any())
+    {
+        <!-- Empty State -->
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div class="p-12">
+                <div class="text-center">
+                    <i class="bi bi-diagram-3 text-6xl text-gray-300 mb-4 block"></i>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Twój graf jest pusty</h2>
+                    <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                        Wygląda na to, że nie masz jeszcze żadnych technologii w swoim grafie. 
+                        Aby rozpocząć, wypełnij swój profil.
+                    </p>
+                    <a href="/profile" 
+                       class="inline-flex items-center gap-2 px-6 py-3 text-base font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors">
+                        <i class="bi bi-person-fill"></i>
+                        Przejdź do profilu
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Graph Display -->
+        <!-- Info Alert for Start Node -->
+        @if (graphData is not null && graphData?.Nodes?.Count == 1 && graphData.Nodes[0].IsStart)
+        {
+            <div class="p-4 mb-6 text-blue-800 border border-blue-300 rounded-lg bg-blue-50" role="alert">
+                <div class="flex items-center gap-2 mb-2">
+                    <i class="bi bi-info-circle text-xl"></i>
+                    <h3 class="text-lg font-medium">Zacznij swoją podróż!</h3>
+                </div>
+                <p class="text-sm">
+                    Kliknij węzeł <strong>"Start"</strong> na grafie, aby zobaczyć opcje i rozpocząć dodawanie technologii.
+                </p>
+            </div>
+        }
+
+        @if (graphData is not null && graphData?.Nodes?.Count >= 1 && graphData.Nodes[0].IsStart)
+        {
+            <!-- Graph Card -->
+            <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="p-6">
+                    @{
+                        Console.WriteLine("Tu jestem");
+                    }
+                    <div class="h-[600px] border border-gray-300 rounded-lg bg-gray-50">
+                        <GraphVisualizer 
+                        Nodes="@(graphData!.Nodes!)"
+                        Edges="@(graphData!.Edges!)"
+                        OnNodeSelected="@HandleNodeClick"
+                        OnBackgroundClick="@HandleBackgroundClick"
+                        OnGraphLoaded="@HandleGraphLoaded" />
+                    </div>
+                </div>
+            </div>
+        }
+
+         <!-- Selected Node Info -->
+        @if (selectedNodeId.HasValue && selectedNode is not null)
+        {
+            <div class="mt-6 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full" style="background-color: @GetNodeColorPreview(selectedNode.Progress);"></div>
+                        <h3 class="text-xl font-bold text-gray-900">@selectedNode.Name</h3>
+                    </div>
+                    <button type="button" 
+                            @onclick="@(() => selectedNodeId = null)"
+                            class="text-gray-400 hover:text-gray-600">
+                        <i class="bi bi-x-lg text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <span class="text-sm text-gray-500">Kategoria</span>
+                        <p class="font-medium">@selectedNode.Prefix</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500">Tag</span>
+                        <p class="font-medium">@selectedNode.Tag</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500">Postęp</span>
+                        <p class="font-medium">@selectedNode.Progress%</p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <span class="text-sm text-gray-500 block mb-1">Opis</span>
+                    <p class="text-gray-700">@selectedNode.SystemDescription</p>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="button" 
+                            @onclick="OpenNodeOptionsModal"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors">
+                        <i class="bi bi-gear-fill"></i>
+                        Zarządzaj
+                    </button>
+                    <button type="button" 
+                            @onclick="@(() => OpenRecommendationModal(selectedNodeId.Value))"
+                            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-700 rounded-lg hover:bg-primary-50 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors">
+                        <i class="bi bi-stars"></i>
+                        Szukaj nowych technologii
+                    </button>
+                </div>
+            </div>
+        }
+    }
+
+    <!-- Modals -->
+    <NodeOptionsModal 
+        IsVisible="@showNodeOptionsModal"
+        Node="@selectedNode"
+        OnClose="@CloseNodeOptionsModal"
+        OnSaved="@HandleNodeSaved"
+        OnDeleted="@HandleNodeDeleted"
+        OnGetRecommendations="@OpenRecommendationModal" />
+
+    <RecommendationModal 
+        IsVisible="@showRecommendationModal"
+        SourceNodeId="@(selectedNodeId ?? 0)"
+        ContextTechnologyIds="@GetAllNodeIds()"
+        OnClose="@CloseRecommendationModal"
+        OnTechnologiesAdded="@HandleTechnologiesAdded" />
+</div>
+
+@code {
+    private TechnologyGraphDto? graphData;
+    private int? selectedNodeId;
+    private GraphNodeDto? selectedNode;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private bool showNodeOptionsModal = false;
+    private bool showRecommendationModal = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Zainicjalizuj stan użytkownika przed sprawdzeniem
+            await UserStateService.InitializeAsync();
+            
+            // Sprawdź czy użytkownik jest zalogowany
+            if (UserStateService.CurrentState?.IsAuthenticated != true)
+            {
+                Logger.LogWarning("Użytkownik niezalogowany, przekierowanie do logowania");
+                // Użyj InvokeAsync dla bezpiecznej nawigacji w Blazor Server
+                await InvokeAsync(() =>
+                {
+                    Navigation.NavigateTo("/login", true);
+                });
+                return;
+            }
+
+            // Załaduj dane grafu
+            await LoadGraphAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Błąd podczas inicjalizacji Dashboard");
+            errorMessage = "Nie udało się załadować danych. Spróbuj ponownie później.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadGraphAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            StateHasChanged();
+
+            graphData = await TechnologyService.GetGraphAsync();
+
+            // Sortuj węzły tak, aby węzły z IsStart = True były pierwsze
+            if (graphData is not null && graphData.Nodes is not null)
+            {
+                graphData.Nodes = graphData.Nodes
+                    .Where(n => n is not null)
+                    .OrderByDescending(n => n.IsStart)
+                    .ToList();
+            }
+
+            // Usuń krawędzie które są null
+            if (graphData is not null && graphData.Edges is not null)
+            {
+                graphData.Edges = graphData.Edges
+                    .Where(e => e is not null)
+                    .ToList();
+            }
+
+            if (graphData is null)
+            {
+                errorMessage = "Nie udało się pobrać danych grafu.";
+                Logger.LogWarning("GetGraphAsync zwróciło null");
+            }
+            else
+            {
+                Logger.LogInformation("Załadowano graf: {NodeCount} węzłów, {EdgeCount} krawędzi", 
+                    graphData.Nodes?.Count ?? 0, graphData.Edges?.Count ?? 0);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Błąd podczas ładowania grafu");
+            errorMessage = "Wystąpił błąd podczas ładowania grafu.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task RefreshGraph()
+    {
+        Logger.LogInformation("Odświeżanie grafu");
+        selectedNodeId = null;
+        selectedNode = null;
+        await LoadGraphAsync();
+    }
+
+    private void HandleNodeClick(int nodeId)
+    {
+        Logger.LogInformation("Kliknięto węzeł: {NodeId}", nodeId);
+        selectedNodeId = nodeId;
+        selectedNode = graphData?.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        StateHasChanged();
+    }
+
+    private void HandleBackgroundClick()
+    {
+        Logger.LogInformation("Kliknięto tło - odznaczanie węzła");
+        selectedNodeId = null;
+        selectedNode = null;
+        StateHasChanged();
+    }
+
+    private void HandleGraphLoaded()
+    {
+        Logger.LogInformation("Graf został załadowany i zainicjalizowany");
+    }
+
+    private string GetNodeColorPreview(int progress)
+    {
+        if (progress == 0) return "#9ca3af";
+        if (progress < 30) return "#ef4444";
+        if (progress < 70) return "#f59e0b";
+        if (progress < 100) return "#3b82f6";
+        return "#10b981";
+    }
+
+    private void OpenNodeOptionsModal()
+    {
+        if (selectedNode is not null)
+        {
+            Logger.LogInformation("Otwieranie modala opcji węzła {NodeId}", selectedNode.Id);
+            showNodeOptionsModal = true;
+        }
+    }
+
+    private void CloseNodeOptionsModal()
+    {
+        Logger.LogInformation("Zamykanie modala opcji węzła");
+        showNodeOptionsModal = false;
+    }
+
+    private async Task HandleNodeSaved()
+    {
+        Logger.LogInformation("Węzeł został zapisany, odświeżanie grafu");
+        await RefreshGraph();
+    }
+
+    private async Task HandleNodeDeleted()
+    {
+        Logger.LogInformation("Węzeł został usunięty, odświeżanie grafu");
+        selectedNodeId = null;
+        selectedNode = null;
+        await RefreshGraph();
+    }
+
+    private void OpenRecommendationModal(int nodeId)
+    {
+        Logger.LogInformation("Otwieranie modala rekomendacji dla węzła {NodeId}", nodeId);
+        selectedNodeId = nodeId;
+        selectedNode = graphData?.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        showRecommendationModal = true;
+    }
+
+    private void CloseRecommendationModal()
+    {
+        Logger.LogInformation("Zamykanie modala rekomendacji");
+        showRecommendationModal = false;
+    }
+
+    private async Task HandleTechnologiesAdded()
+    {
+        Logger.LogInformation("Technologie zostały dodane, odświeżanie grafu");
+        await RefreshGraph();
+    }
+
+    private List<int> GetAllNodeIds()
+    {
+        return graphData?.Nodes.Select(n => n.Id).ToList() ?? new List<int>();
+    }
+}

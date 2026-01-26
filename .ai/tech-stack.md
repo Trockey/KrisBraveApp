@@ -11,7 +11,6 @@
 **Usuń z planu:**
 - TypeScript
 - jQuery  
-- Supabase
 - Wątpliwości co do wersji Blazora
 
 **Plan awaryjny** (jeśli Blazor okaże się za trudny po 1 tygodniu):
@@ -23,7 +22,7 @@ Czy chcesz, żebym rozwinął konkretny aspekt tej analizy lub przygotował stru
 Frontend + Backend:
 └─ ASP.NET Core Blazor Server (.NET 8)
    ├─ C# (jeden język)
-   ├─ Blazor components (UI)
+   ├─ Blazor components (UI) , Flowbite, vis.js
    └─ Zero JavaScript (poza biblioteką grafów)
 
 Database:
@@ -41,13 +40,16 @@ Wizualizacja grafów:
 
 ```yaml
 Frontend + Backend:
-  Framework: ASP.NET Core Blazor Server (.NET 8)
+  Framework: ASP.NET Core Blazor Server (.NET 9)
   Język: C# (tylko jeden język)
   UI: Blazor Components
+  CSS Framework: Tailwind CSS 3.4
+  Component Library: Flowbite 2.2
+  Icons: Bootstrap Icons 1.11
   
 Database:
   DB: PostgreSQL 16
-  ORM: Entity Framework Core 8
+  ORM: Entity Framework Core 9
   
 Authentication:
   Provider: Google OAuth 2.0
