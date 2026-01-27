@@ -98,8 +98,7 @@ public class UserTechnology
     /// Prefix/kategoria główna technologii.
     /// Przykład: "DotNet", "Java", "JavaScript", "Python"
     /// </summary>
-
-    public string Prefix { get; internal set; }
+    public string Prefix { get; set; } = string.Empty;
 
 }
 

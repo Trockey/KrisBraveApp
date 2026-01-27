@@ -1,7 +1,9 @@
 @page "/login"
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager Navigation
+@inject IHostEnvironment Environment
 
 <PageTitle>Logowanie - DeveloperGoals</PageTitle>
 
@@ -21,6 +23,14 @@
                     <i class="bi bi-google text-lg"></i>
                     Zaloguj się przez Google
                 </a>
+
+                @if (Environment.IsDevelopment())
+                {
+                    <a href="/login/test?test=true" class="inline-flex items-center justify-center gap-2 w-full px-5 py-3 mt-4 text-base font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:ring-4 focus:outline-none focus:ring-gray-300 transition-colors border border-gray-300">
+                        <i class="bi bi-shield-check text-lg"></i>
+                        Logowanie testowe (Dev)
+                    </a>
+                }
 
                 <div class="mt-6">
                     <p class="text-gray-500 text-sm mb-0">
@@ -60,6 +70,18 @@
 </div>
 
 @code {
-    // Strona logowania - przekierowanie do Google OAuth
+    protected override void OnInitialized()
+    {
+        // Sprawdź czy URL zawiera parametr test=true
+        var uri = new Uri(Navigation.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+        
+        if (queryParams.TryGetValue("test", out var testValue) && 
+            testValue.ToString().Equals("true", StringComparison.OrdinalIgnoreCase))
+        {
+            // Przekieruj do endpointu testowego logowania
+            Navigation.NavigateTo("/login/test?test=true", forceLoad: true);
+        }
+    }
 }
 

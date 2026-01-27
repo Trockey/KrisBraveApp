@@ -1,0 +1,13 @@
+# Test Results
+test-results/
+screenshots/
+traces/
+videos/
+
+# Playwright
+.playwright/
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
