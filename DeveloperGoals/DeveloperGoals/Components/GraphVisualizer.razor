@@ -1,0 +1,138 @@
+@using DeveloperGoals.DTOs
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div @ref="graphContainer" id="@containerId" class="w-full h-full" style="min-height: 400px; height: 100%;"></div>
+
+@code {
+    private ElementReference graphContainer;
+    private IJSObjectReference? graphModule;
+    private string containerId = $"graph-{Guid.NewGuid():N}";
+    private bool isInitialized = false;
+
+    [Parameter]
+    public List<GraphNodeDto> Nodes { get; set; } = new();
+
+    [Parameter]
+    public List<GraphEdgeDto> Edges { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<int> OnNodeSelected { get; set; }
+
+    [Parameter]
+    public EventCallback OnBackgroundClick { get; set; }
+
+    [Parameter]
+    public EventCallback OnGraphLoaded { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // Importuj moduł JavaScript
+                graphModule = await JSRuntime.InvokeAsync<IJSObjectReference>(
+                    "import", "./js/graph-visualizer.js");
+
+                // Poczekaj chwilę, aby upewnić się, że kontener jest w pełni zrenderowany
+                // i ma wymiary w DOM
+                await Task.Delay(200);
+
+                // Inicjalizuj graf
+                await InitializeGraphAsync();
+                isInitialized = true;
+
+                // Powiadom że graf jest gotowy
+                await OnGraphLoaded.InvokeAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Błąd podczas inicjalizacji grafu: {ex.Message}");
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Aktualizuj graf gdy zmieniają się parametry
+        if (isInitialized && graphModule is not null)
+        {
+            await UpdateGraphAsync();
+        }
+    }
+
+    private async Task InitializeGraphAsync()
+    {
+        if (graphModule is null)
+            return;
+
+        try
+        {
+            var dotnetRef = DotNetObjectReference.Create(this);
+            await graphModule.InvokeVoidAsync("initializeGraph", 
+                containerId, Nodes, Edges, dotnetRef);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Błąd podczas inicjalizacji grafu: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateGraphAsync()
+    {
+        if (graphModule is null)
+            return;
+
+        try
+        {
+            await graphModule.InvokeVoidAsync("updateGraph", containerId, Nodes, Edges);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Błąd podczas aktualizacji grafu: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Metoda wywoływana z JavaScript gdy użytkownik kliknie węzeł
+    /// </summary>
+    [JSInvokable]
+    public async Task HandleNodeClick(int nodeId)
+    {
+        await OnNodeSelected.InvokeAsync(nodeId);
+    }
+
+    /// <summary>
+    /// Metoda wywoływana z JavaScript gdy użytkownik kliknie tło
+    /// </summary>
+    [JSInvokable]
+    public async Task HandleBackgroundClick()
+    {
+        await OnBackgroundClick.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Odśwież graf (publiczna metoda)
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        await UpdateGraphAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (graphModule is not null)
+        {
+            try
+            {
+                await graphModule.InvokeVoidAsync("destroyGraph", containerId);
+                await graphModule.DisposeAsync();
+            }
+            catch (Exception)
+            {
+                // Ignoruj błędy podczas disposal
+            }
+        }
+    }
+}

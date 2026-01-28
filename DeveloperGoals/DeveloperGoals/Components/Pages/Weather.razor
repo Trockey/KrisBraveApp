@@ -1,0 +1,68 @@
+@page "/weather"
+@attribute [StreamRendering]
+
+<PageTitle>Weather</PageTitle>
+
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Weather</h1>
+
+    <p class="text-gray-600 mb-6">This component demonstrates showing data.</p>
+
+    @if (forecasts == null)
+    {
+        <p class="text-gray-500 italic">Loading...</p>
+    }
+    else
+    {
+        <div class="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm">
+            <table class="w-full text-sm text-left text-gray-700">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Date</th>
+                        <th scope="col" class="px-6 py-3" aria-label="Temperature in Celsius">Temp. (C)</th>
+                        <th scope="col" class="px-6 py-3" aria-label="Temperature in Farenheit">Temp. (F)</th>
+                        <th scope="col" class="px-6 py-3">Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var forecast in forecasts)
+                    {
+                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                            <td class="px-6 py-4">@forecast.Date.ToShortDateString()</td>
+                            <td class="px-6 py-4">@forecast.TemperatureC</td>
+                            <td class="px-6 py-4">@forecast.TemperatureF</td>
+                            <td class="px-6 py-4">@forecast.Summary</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private WeatherForecast[]? forecasts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate asynchronous loading to demonstrate streaming rendering
+        await Task.Delay(500);
+
+        var startDate = DateOnly.FromDateTime(DateTime.Now);
+        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
+        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        {
+            Date = startDate.AddDays(index),
+            TemperatureC = Random.Shared.Next(-20, 55),
+            Summary = summaries[Random.Shared.Next(summaries.Length)]
+        }).ToArray();
+    }
+
+    private class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+}

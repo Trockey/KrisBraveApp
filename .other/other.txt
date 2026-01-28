@@ -1,0 +1,9 @@
+Inna baza postgres na Docker: developergoals_dev, developergoals
+
+
+
+Tworzenie nowej migracji:
+cd DeveloperGoals/DeveloperGoals; dotnet ef migrations add ChangeUserIdToLong --context ApplicationDbContext
+
+Update bazy:
+dotnet ef database update --context ApplicationDbContext

@@ -1,0 +1,342 @@
+@page "/profile"
+@rendermode InteractiveServer
+@using DeveloperGoals.DTOs
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.Extensions.Configuration
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject ILogger<Profile> Logger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IConfiguration Configuration
+
+<PageTitle>Profil - DeveloperGoals</PageTitle>
+
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <i class="bi bi-person-fill text-primary-600"></i>
+        Mój Profil
+    </h1>
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="p-4 mb-4 text-green-800 border border-green-300 rounded-lg bg-green-50" role="alert">
+            <div class="flex items-center gap-2">
+                <i class="bi bi-check-circle text-xl"></i>
+                <span>@successMessage</span>
+            </div>
+        </div>
+    }
+
+    @if (validationErrors.Any())
+    {
+        <div class="p-4 mb-4 text-red-800 border border-red-300 rounded-lg bg-red-50" role="alert">
+            <h6 class="font-medium mb-2 flex items-center gap-2">
+                <i class="bi bi-exclamation-triangle"></i>
+                Wystąpiły błędy walidacji:
+            </h6>
+            <ul class="list-disc list-inside mb-0">
+                @foreach (var error in validationErrors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div class="p-6">
+            <EditForm Model="@profileData" OnValidSubmit="@HandleSubmit">
+                <DataAnnotationsValidator />
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-900 mb-2">Główne technologie *</label>
+                    <p class="text-gray-600 text-sm mb-3">Wybierz minimum @minTechnologies technologii, które znasz</p>
+                    
+                    @if (selectedTechnologies.Count < minTechnologies && selectedTechnologies.Count > 0)
+                    {
+                        <div class="p-3 mb-3 text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 text-sm" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Wybrano @selectedTechnologies.Count z minimum @minTechnologies wymaganych technologii
+                        </div>
+                    }
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="space-y-2">
+                            @foreach (var tech in availableTechnologies.Take(5))
+                            {
+                                <div class="flex items-center">
+                                    <input type="checkbox" 
+                                           id="@($"tech-{tech.Key}")"
+                                           checked="@tech.Value"
+                                           @onchange="@((e) => ToggleTechnology(tech.Key, (bool)e.Value!))"
+                                           class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2">
+                                    <label for="@($"tech-{tech.Key}")" class="ms-2 text-sm font-medium text-gray-900">@tech.Key</label>
+                                </div>
+                            }
+                        </div>
+                        <div class="space-y-2">
+                            @foreach (var tech in availableTechnologies.Skip(5))
+                            {
+                                <div class="flex items-center">
+                                    <input type="checkbox" 
+                                           id="@($"tech-{tech.Key}")"
+                                           checked="@tech.Value"
+                                           @onchange="@((e) => ToggleTechnology(tech.Key, (bool)e.Value!))"
+                                           class="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2">
+                                    <label for="@($"tech-{tech.Key}")" class="ms-2 text-sm font-medium text-gray-900">@tech.Key</label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label for="role" class="block text-sm font-bold text-gray-900 mb-2">Rola *</label>
+                    <select id="role"
+                            @bind="profileData.Role"
+                            class="bg-gray-50 border @(string.IsNullOrEmpty(profileData.Role) && hasSubmitted ? "border-red-500" : "border-gray-300") text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5">
+                        <option value="">Wybierz rolę...</option>
+                        <option value="Programista">Programista</option>
+                        <option value="Tester">Tester</option>
+                        <option value="Analityk">Analityk</option>
+                        <option value="DataScienceSpecialist">Data Science Specialist</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label for="area" class="block text-sm font-bold text-gray-900 mb-2">Obszar rozwoju *</label>
+                    <select id="area"
+                            @bind="profileData.DevelopmentArea"
+                            class="bg-gray-50 border @(string.IsNullOrEmpty(profileData.DevelopmentArea) && hasSubmitted ? "border-red-500" : "border-gray-300") text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5">
+                        <option value="">Wybierz obszar...</option>
+                        <option value="UserInterface">User Interface</option>
+                        <option value="Backend">Backend</option>
+                        <option value="FullStack">Full Stack</option>
+                        <option value="Testing">Testing</option>
+                        <option value="DataScience">Data Science</option>
+                        <option value="DevOps">DevOps</option>
+                    </select>
+                </div>
+
+                <div class="p-4 mb-6 text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50 text-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Wszystkie pola są wymagane. Zmiana profilu NIE powoduje automatycznej regeneracji grafu technologii.
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-3 md:justify-end">
+                    <button type="button" 
+                            @onclick="@HandleCancel"
+                            class="px-5 py-2.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 transition-colors">
+                        Anuluj
+                    </button>
+                    <button type="submit" 
+                            disabled="@isSaving"
+                            class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        @if (isSaving)
+                        {
+                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Zapisywanie...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle"></i>
+                            <span>Zapisz profil</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <p class="text-gray-600 text-sm flex items-center gap-2">
+            <i class="bi bi-info-circle"></i>
+            Czas wypełnienia profilu: około 3 minuty
+        </p>
+    </div>
+</div>
+
+@code {
+    private CreateProfileCommand profileData = new();
+    private Dictionary<string, bool> availableTechnologies = new()
+    {
+        { ".NET / C#", false },
+        { "Java", false },
+        { "JavaScript", false },
+        { "TypeScript", false },
+        { "Python", false },
+        { "React", false },
+        { "Angular", false },
+        { "Vue.js", false },
+        { "SQL", false },
+        { "Docker", false }
+    };
+    
+    private List<string> selectedTechnologies = new();
+    private List<string> validationErrors = new();
+    private string? successMessage;
+    private bool isSaving = false;
+    private bool hasSubmitted = false;
+    private bool isUpdateMode = false;
+    private int minTechnologies = 2;
+    private string email = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Pobierz minimalną liczbę technologii z konfiguracji
+        minTechnologies = Configuration.GetValue<int>("Profile:MinTechnologies", 2);
+        
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            email = user.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+            
+            // Spróbuj pobrać istniejący profil
+            var response = await Http.GetAsync($"/api/profile?email={email}");
+            if (response.IsSuccessStatusCode)
+            {
+                var existingProfile = await response.Content.ReadFromJsonAsync<UserProfileDto>();
+                if (existingProfile != null)
+                {
+                    isUpdateMode = true;
+                    profileData.Role = existingProfile.Role;
+                    profileData.DevelopmentArea = existingProfile.DevelopmentArea;
+                    
+                    // Zaznacz technologie z profilu
+                    foreach (var tech in existingProfile.MainTechnologies)
+                    {
+                        if (availableTechnologies.ContainsKey(tech))
+                        {
+                            availableTechnologies[tech] = true;
+                            if (!selectedTechnologies.Contains(tech))
+                            {
+                                selectedTechnologies.Add(tech);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Nie udało się pobrać profilu użytkownika");
+            // Jeśli profil nie istnieje, kontynuuj w trybie tworzenia
+        }
+    }
+
+    private void ToggleTechnology(string technology, bool isChecked)
+    {
+        availableTechnologies[technology] = isChecked;
+        
+        if (isChecked && !selectedTechnologies.Contains(technology))
+        {
+            selectedTechnologies.Add(technology);
+        }
+        else if (!isChecked)
+        {
+            selectedTechnologies.Remove(technology);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        hasSubmitted = true;
+        validationErrors.Clear();
+        successMessage = null;
+
+        // Walidacja lokalna
+        if (string.IsNullOrWhiteSpace(profileData.Role))
+        {
+            validationErrors.Add("Rola jest wymagana");
+        }
+
+        if (selectedTechnologies.Count < minTechnologies)
+        {
+            validationErrors.Add($"Musisz wybrać minimum {minTechnologies} technologii");
+        }
+
+        if (string.IsNullOrWhiteSpace(profileData.DevelopmentArea))
+        {
+            validationErrors.Add("Obszar rozwoju jest wymagany");
+        }
+
+        if (validationErrors.Any())
+        {
+            return;
+        }
+
+        // Przygotuj dane do wysłania
+        profileData.MainTechnologies = selectedTechnologies.ToList();
+
+        isSaving = true;
+        try
+        {
+            HttpResponseMessage response;
+            
+            if (isUpdateMode)
+            {
+                // Aktualizuj profil
+                var updateCommand = new UpdateProfileCommand
+                {
+                    MainTechnologies = profileData.MainTechnologies,
+                    Role = profileData.Role,
+                    DevelopmentArea = profileData.DevelopmentArea,
+                    Email = email
+                };
+                
+                response = await Http.PutAsJsonAsync("/api/profile", updateCommand);
+            }
+            else
+            {
+                // Utwórz profil
+                profileData.Email = email;
+                response = await Http.PostAsJsonAsync("/api/profile", profileData);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = isUpdateMode 
+                    ? "Profil został zaktualizowany pomyślnie!" 
+                    : "Profil został utworzony pomyślnie!";
+                
+                isUpdateMode = true;
+                
+                // Opcjonalnie: przekieruj po 2 sekundach
+                // await Task.Delay(2000);
+                // Navigation.NavigateTo("/");
+            }
+            else
+            {
+                var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponseDto>();
+                if (errorResponse?.Errors != null && errorResponse.Errors.Any())
+                {
+                    validationErrors.AddRange(errorResponse.Errors.Select(e => e.Message));
+                }
+                else
+                {
+                    validationErrors.Add(errorResponse?.Message ?? "Wystąpił błąd podczas zapisywania profilu");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Błąd podczas zapisywania profilu");
+            validationErrors.Add("Wystąpił nieoczekiwany błąd. Spróbuj ponownie.");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void HandleCancel()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
+

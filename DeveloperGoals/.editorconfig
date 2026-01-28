@@ -1,0 +1,104 @@
+root = true
+
+###########################################################
+# Styl kodu Microsoft – idealny do Blazor, API, Infrastructure
+###########################################################
+
+[*.cs]
+
+############### Formatowanie ###############
+
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8-bom
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+############### Using directives ###############
+
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+############### Preferencje stylu Microsoft ###############
+
+# Var
+dotnet_style_prefer_var_for_built_in_types = true:suggestion
+dotnet_style_prefer_var_when_type_is_apparent = true:suggestion
+dotnet_style_prefer_var_for_complex_types = true:suggestion
+
+# Qualification
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Nawiasy i wyrażenia
+csharp_prefer_braces = false:warning
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_simplified_boolean_expressions = false:suggestion
+
+# Kopia z oryginalnego .editorconfig file
+csharp_new_line_before_open_brace = all
+csharp_space_after_keywords_in_control_flow_statements = false
+
+# Namespace
+dotnet_style_namespace_match_folder = true:silent
+
+# Usingi niewykorzystane
+dotnet_remove_unnecessary_imports = true:suggestion
+csharp_using_directive_placement = outside_namespace:warning
+
+# (from oryginal .editorconfig file)
+dotnet_naming_symbols.interface.applicable_kinds = interface
+dotnet_naming_symbols.interface.applicable_accessibilities = *
+dotnet_naming_style.begins_with_i.required_prefix = I
+dotnet_naming_style.begins_with_i.capitalization = pascal_case
+
+############ Klasy, pola, właściwości ############
+
+dotnet_naming_rule.private_fields_must_be_underscored.severity = warning
+dotnet_naming_rule.private_fields_must_be_underscored.symbols = private_fields
+dotnet_naming_rule.private_fields_must_be_underscored.style = underscore_style
+
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+
+dotnet_naming_style.underscore_style.capitalization = camel_case
+dotnet_naming_style.underscore_style.required_prefix = _
+
+# Konwencje nazewnictwa (from oryginal .editorconfig file)
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.severity = warning
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.symbols = interface
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.style = begins_with_i
+
+# Nullable (from oryginal .editorconfig file)
+dotnet_diagnostic.CS8618.severity = none
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+
+############# C# Specyficzne #############
+
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_style_expression_bodied_methods = true:silent
+csharp_style_expression_bodied_properties = when_on_single_line:suggestion
+
+
+###########################################
+# Pliki Razor
+[*.razor]
+indent_style = space
+indent_size = 4
+
+# Pliki JSON
+[*.json]
+indent_style = space
+indent_size = 2
+
+# Pliki XML
+[*.{csproj,props,targets}]
+indent_style = space
+indent_size = 2
+			

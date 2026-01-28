@@ -1,0 +1,189 @@
+### AI Recommendations Endpoint - Przykłady użycia
+### Plik do testowania w VS Code z rozszerzeniem REST Client
+
+@baseUrl = https://localhost:7000
+@contentType = application/json
+
+### 1. Generowanie rekomendacji - podstawowy request
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1
+}
+
+### 2. Generowanie rekomendacji z kontekstem
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1,
+  "contextTechnologyIds": [1, 2, 3]
+}
+
+### 3. Generowanie rekomendacji - maksymalny kontekst
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 5,
+  "contextTechnologyIds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+}
+
+### 4. Test walidacji - brak fromTechnologyId (400)
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "contextTechnologyIds": [1, 2]
+}
+
+### 5. Test walidacji - nieprawidłowy ID (400)
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 0
+}
+
+### 6. Test walidacji - za dużo kontekstu (400)
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1,
+  "contextTechnologyIds": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51]
+}
+
+### 7. Test cache - wywołaj dwa razy ten sam request
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1,
+  "contextTechnologyIds": [2, 3]
+}
+
+### 8. Generowanie rekomendacji - pusta lista kontekstu
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1,
+  "contextTechnologyIds": []
+}
+
+### 9. Generowanie rekomendacji - null kontekst
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1,
+  "contextTechnologyIds": null
+}
+
+### 10. Test deduplikacji - duplikaty w contextTechnologyIds
+POST {{baseUrl}}/api/ai/recommendations
+Content-Type: {{contentType}}
+
+{
+  "fromTechnologyId": 1,
+  "contextTechnologyIds": [2, 2, 3, 3, 3, 4]
+}
+
+###
+### Pomocnicze endpointy do przygotowania danych testowych
+###
+
+### Pobranie listy technologii użytkownika
+GET {{baseUrl}}/api/technologies
+Content-Type: {{contentType}}
+
+### Pobranie profilu użytkownika
+GET {{baseUrl}}/api/profile
+Content-Type: {{contentType}}
+
+### Utworzenie profilu (jeśli nie istnieje)
+POST {{baseUrl}}/api/profile
+Content-Type: {{contentType}}
+
+{
+  "mainTechnologies": ["DotNet", "PostgreSQL"],
+  "role": "Programista",
+  "developmentArea": "Backend"
+}
+
+### Dodanie technologii do grafu
+POST {{baseUrl}}/api/technologies
+Content-Type: {{contentType}}
+
+{
+  "technologyDefinitionId": 1,
+  "fromTechnologyId": 1,
+  "privateDescription": "Test technology",
+  "isCustom": false
+}
+
+###
+### Oczekiwane odpowiedzi
+###
+
+### Response 200 OK - Sukces
+# {
+#   "recommendations": [
+#     {
+#       "technologyDefinitionId": 45,
+#       "name": "DotNet - LINQ Advanced",
+#       "prefix": "DotNet",
+#       "tag": "Technologia",
+#       "systemDescription": "Advanced Language Integrated Query techniques",
+#       "aiReasoning": "Natural progression after Entity Framework",
+#       "isAlreadyInGraph": false
+#     },
+#     // ... 9 more recommendations
+#   ],
+#   "count": 10,
+#   "fromCache": false,
+#   "cacheExpiresAt": "2025-01-04T14:30:00Z",
+#   "generatedAt": "2025-01-03T14:30:00Z"
+# }
+
+### Response 400 Bad Request - Profil niekompletny
+# {
+#   "error": "ValidationError",
+#   "message": "Profile is incomplete. Please complete your profile first.",
+#   "details": null,
+#   "errors": null
+# }
+
+### Response 404 Not Found - Technologia nie znaleziona
+# {
+#   "error": "NotFound",
+#   "message": "Source technology not found",
+#   "details": null,
+#   "errors": null
+# }
+
+### Response 408 Request Timeout - Timeout AI
+# {
+#   "error": "Timeout",
+#   "message": "AI service did not respond within 20 seconds. Please try again.",
+#   "details": null,
+#   "errors": null
+# }
+
+### Response 500 Internal Server Error - Błąd AI
+# {
+#   "error": "AIServiceError",
+#   "message": "Failed to generate recommendations. Please try again later.",
+#   "details": "OpenRouter API returned error 503",
+#   "errors": null
+# }
+
+### Response 502 Bad Gateway - Nieprawidłowy format
+# {
+#   "error": "BadGateway",
+#   "message": "AI service returned invalid response format",
+#   "details": null,
+#   "errors": null
+# }

@@ -1,0 +1,19 @@
+================================================================
+Propozycje na apikację:
+
+1.
+Programista który chce się doszkolić z technologii - input technologia
+AI - plan nauki
+Profil: background programisty, profil programisty
+Programsista i jego technologie (lub kursy)
+
+2.
+Człowiek który chce zagrać w grę
+AI - wybór konkretnego zestawu gier
+
+3.
+Cłowiek który chce wejść w sport X
+AI - proponuje Ćwiczenia do sportu
+Profil użytkownika - jakie ma talenty swojego ciała
+
+

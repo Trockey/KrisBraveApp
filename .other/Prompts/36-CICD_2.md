@@ -1,0 +1,1 @@
+Wykorzystaj @github-actons.mdc do pprawy jakości @ci.yml
