@@ -1,0 +1,189 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: Unit tests + Release publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+          cache: true
+          cache-dependency-path: |
+            DeveloperGoals/DeveloperGoals.sln
+            DeveloperGoals/**/*.csproj
+
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v6
+      #   with:
+      #     node-version: "20"
+      #     cache: npm
+      #     cache-dependency-path: DeveloperGoals/DeveloperGoals/package-lock.json
+
+      - name: Build CSS (Tailwind)
+        working-directory: DeveloperGoals/DeveloperGoals
+        run: |
+          npm ci
+          npm run build:css
+
+      - name: Restore
+        run: dotnet restore "DeveloperGoals/DeveloperGoals.sln"
+
+      - name: Build (Release)
+        run: dotnet build "DeveloperGoals/DeveloperGoals.sln" -c Release --no-restore
+
+      - name: Unit tests (Release)
+        run: dotnet test "DeveloperGoals/DeveloperGoals.UnitTests/DeveloperGoals.UnitTests.csproj" -c Release --no-build --verbosity normal
+
+      - name: Publish (Release)
+        run: dotnet publish "DeveloperGoals/DeveloperGoals/DeveloperGoals.csproj" -c Release --no-restore -o "artifacts/publish"
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: publish
+          path: artifacts/publish
+          if-no-files-found: error
+
+  e2e-tests:
+    name: E2E (Playwright) + app smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: developergoals
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d developergoals"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+
+      # Aplikacja (DB + tryb HTTP bez przekierowań HTTPS)
+      ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=developergoals;Username=postgres;Password=postgres"
+      DisableHttpsRedirection: "true"
+
+      # Wymagane do startu aplikacji (w CI używamy logowania testowego)
+      # Authentication__Google__ClientId: "ci"
+      # Authentication__Google__ClientSecret: "ci"
+      # OpenRouter__ApiKey: "ci"
+
+      # Playwright
+      BASE_URL: "http://127.0.0.1:5005"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "9.0.x"
+          cache: true
+          cache-dependency-path: |
+            DeveloperGoals/DeveloperGoals.sln
+            DeveloperGoals/**/*.csproj
+
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v6
+      #   with:
+      #     node-version: "20"
+      #     cache: npm
+      #     cache-dependency-path: DeveloperGoals/DeveloperGoals/package-lock.json
+
+      - name: Build CSS (Tailwind)
+        working-directory: DeveloperGoals/DeveloperGoals
+        run: |
+          npm ci
+          npm run build:css
+
+      - name: Restore
+        run: dotnet restore "DeveloperGoals/DeveloperGoals.sln"
+
+      - name: Build (Release)
+        run: dotnet build "DeveloperGoals/DeveloperGoals.sln" -c Release --no-restore
+
+      - name: Install dotnet-ef
+        run: |
+          dotnet tool install --global dotnet-ef
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Apply EF Core migrations (Postgres)
+        run: dotnet ef database update --project "DeveloperGoals/DeveloperGoals/DeveloperGoals.csproj" --startup-project "DeveloperGoals/DeveloperGoals/DeveloperGoals.csproj"
+
+      - name: Start app (Release)
+        run: |
+          nohup dotnet run --project "DeveloperGoals/DeveloperGoals/DeveloperGoals.csproj" -c Release --no-build --urls "http://127.0.0.1:5005" > app.log 2>&1 &
+
+      - name: Wait for app
+        run: |
+          for i in {1..60}; do
+            if curl -fsS "http://127.0.0.1:5005/login" >/dev/null; then
+              echo "App is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App failed to start"
+          tail -n 200 app.log || true
+          exit 1
+
+      - name: Build E2E project
+        run: dotnet build "DeveloperGoals/DeveloperGoals.E2ETests/DeveloperGoals.E2ETests.csproj" -c Release --no-restore
+
+      - name: Install Playwright browsers (Chromium)
+        run: pwsh "DeveloperGoals/DeveloperGoals.E2ETests/bin/Release/net9.0/playwright.ps1" install chromium --with-deps
+
+      - name: Run E2E tests (Release)
+        run: dotnet test "DeveloperGoals/DeveloperGoals.E2ETests/DeveloperGoals.E2ETests.csproj" -c Release --no-build --verbosity normal
+
+      - name: Upload E2E artifacts (always)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: e2e-artifacts
+          path: |
+            **/test-results/**
+            **/screenshots/**/*.png
+            **/*.zip
+          if-no-files-found: warn
+
+      - name: Upload app log (always)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: app-log
+          path: app.log
+          if-no-files-found: warn

@@ -125,7 +125,14 @@ public class Program
             app.UseHsts();
         }
 
-        app.UseHttpsRedirection();
+        // W CI / testach E2E wygodniej działać po HTTP (bez certyfikatów),
+        // więc pozwalamy wyłączyć przekierowanie na HTTPS przez konfigurację.
+        // np. env: DisableHttpsRedirection=true
+        var disableHttpsRedirection = builder.Configuration.GetValue<bool>("DisableHttpsRedirection");
+        if (!disableHttpsRedirection)
+        {
+            app.UseHttpsRedirection();
+        }
 
         app.UseAuthentication();
         app.UseAuthorization();

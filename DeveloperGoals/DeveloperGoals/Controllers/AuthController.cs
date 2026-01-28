@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using System.Security.Claims;
 using DeveloperGoals.Data;
 using DeveloperGoals.Models;
@@ -21,6 +21,51 @@ public class AuthController : Controller
     {
         _context = context;
     }
+    /// <summary>
+    /// Inicjuje proces logowania testowego przez parametr URL.
+    /// </summary>
+    [HttpGet("test")]
+    public async Task<IActionResult> LoginTest([FromQuery] bool test = false)
+    {
+        if (!test)
+        {
+            return Redirect("/login");
+        }
+
+        // Sprawdź czy użytkownik o Id=2 istnieje w bazie
+        var testUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == BigInteger.Parse("2"));
+
+        if (testUser == null)
+        {
+            // Utwórz testowego użytkownika
+            testUser = new User
+            {
+                Id = BigInteger.Parse("2"),
+                GoogleId = "108226413010999999999",
+                Email = "tester@test.com",
+                Name = "Test",
+                CreatedAt = DateTime.UtcNow,
+                LastLoginAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(testUser);
+            await _context.SaveChangesAsync();
+
+        }
+        else
+        {
+            // Aktualizuj datę ostatniego logowania
+            testUser.LastLoginAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
+        // Zaloguj użytkownika
+        await SignInUser(testUser);
+
+        return Redirect("/");
+    }
+
     /// <summary>
     /// Inicjuje proces logowania przez Google OAuth.
     /// </summary>
@@ -62,16 +107,21 @@ public class AuthController : Controller
             return RedirectToAction(nameof(LoginGoogle));
         }
 
-        await AddOrUpdateUser(googleId, email, name);
+        var user = await AddOrUpdateUser(googleId, email, name);
+
+        // Zaloguj użytkownika (uwierzytelnienie już jest przez Google OAuth, więc tylko aktualizujemy claims jeśli potrzeba)
+        await SignInUser(user);
 
         return Redirect("/");
     }
 
-    private async Task AddOrUpdateUser(string googleId, string email, string name)
+    private async Task<User> AddOrUpdateUser(string googleId, string email, string name)
     {
         // Sprawdź, czy użytkownik już istnieje w bazie
         var existingUser = await _context.Users
             .FirstOrDefaultAsync(u => u.GoogleId == googleId);
+
+        User user;
 
         if(existingUser != null)
         {
@@ -79,6 +129,7 @@ public class AuthController : Controller
             existingUser.Email = email;
             existingUser.Name = name;
             existingUser.LastLoginAt = DateTime.UtcNow;
+            user = existingUser;
         }
         else
         {
@@ -96,9 +147,39 @@ public class AuthController : Controller
             };
 
             _context.Users.Add(newUser);
+            user = newUser;
         }
 
         await _context.SaveChangesAsync();
+        return user;
+    }
+
+    /// <summary>
+    /// Zalogowuje użytkownika tworząc sesję cookie z claims.
+    /// </summary>
+    private async Task SignInUser(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.GoogleId),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.Name),
+            new Claim("UserId", user.Id.ToString())
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            claimsPrincipal,
+            authProperties);
     }
 
     /// <summary>

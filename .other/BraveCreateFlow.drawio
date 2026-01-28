@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.3.3">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.3.4">
   <diagram name="Page-1" id="MpX3gbGEJwnz8nPu3nu_">
-    <mxGraphModel dx="1906" dy="576" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2276" dy="777" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -254,6 +254,21 @@
         </mxCell>
         <mxCell id="9gHVXtukzNFCYR1aCkDN-21" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;fillColor=light-dark(#FFFFFF,#007FFF);" value="24-implementacja-widoku" vertex="1">
           <mxGeometry height="62" width="129" x="1000" y="974.5" as="geometry" />
+        </mxCell>
+        <mxCell id="7ptYBPw636iDIV94Qzn2-4" edge="1" parent="1" source="7ptYBPw636iDIV94Qzn2-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7ptYBPw636iDIV94Qzn2-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7ptYBPw636iDIV94Qzn2-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;fillColor=light-dark(#FFFFFF,#007FFF);" value="przy pomocy cloude, wygeneruj prompta do budowania testów" vertex="1">
+          <mxGeometry height="62" width="129" x="25" y="1178" as="geometry" />
+        </mxCell>
+        <mxCell id="7ptYBPw636iDIV94Qzn2-6" edge="1" parent="1" source="7ptYBPw636iDIV94Qzn2-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7ptYBPw636iDIV94Qzn2-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7ptYBPw636iDIV94Qzn2-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;fillColor=light-dark(#FFFFFF,#007FFF);" value="30-prompt-for-create-tests-created-by-cloude" vertex="1">
+          <mxGeometry height="62" width="129" x="210" y="1178" as="geometry" />
+        </mxCell>
+        <mxCell id="7ptYBPw636iDIV94Qzn2-3" parent="1" style="shape=document;whiteSpace=wrap;html=1;boundedLbl=1;fontFamily=Helvetica;fontSize=11;fontColor=default;labelBackgroundColor=default;fillColor=light-dark(#FFFFFF,#CCCCCC);" value="31-test-plan-complete.md" vertex="1">
+          <mxGeometry height="73" width="87" x="389" y="1175" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
